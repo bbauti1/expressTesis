@@ -13,7 +13,7 @@ const sendVerificationEmail = (email, token) => {
         from: 'comunicadosdigitalizados@gmail.com',
         to: email,
         subject: 'Verifica tu cuenta',
-        html: `<p>Buenas! Se necesita que verifique tu cuenta haciendo clic en el siguiente enlace:</p>
+        html: `<p>Buenas! Se necesita que verifique su cuenta haciendo clic en el siguiente enlace:</p>
                <a href="http://localhost:3000/verify-email?token=${token}">Verificar cuenta</a>`
     };    
 

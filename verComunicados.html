@@ -6,48 +6,49 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="/css/style.css">
-    <title>Comunicados para tu curso</title>
+    <title>Comunicados</title>
 </head>
 <body>
-    <h1>Comunicados para tu curso</h1>
+    <h1>Comunicados</h1>
     <div id="comunicados"></div>
     <br><a href="/estudiante-dashboard">Ir a mi inicio</a>
-        <script>
-            fetch('/api/comunicados-data')
-                .then(response => response.json())
-                .then(comunicados => {
-                    const comunicadosDiv = document.getElementById('comunicados');
-                    if (comunicados.length > 0) {
-                        comunicados.forEach(comunicado => {
-                            const comunicadoDiv = document.createElement('div');
-                            comunicadoDiv.classList.add('comunicado');
-                            comunicadoDiv.innerHTML = `
-                                <h2>${comunicado.titulo}</h2>
-                                <p>${comunicado.info}</p>
-                                <small>Por: ${comunicado.fk_id_preceptor.nombre} ${comunicado.fk_id_preceptor.apellido}</small>
-                            `;
-                            comunicadosDiv.appendChild(comunicadoDiv);
-                        });
-                    } else {
-                        comunicadosDiv.innerHTML = "<p>No hay comunicados disponibles.</p>";
-                    }
-                })
-                .catch(error => console.error('Error al cargar los comunicados:', error));
-        </script>
 
-        <footer>
-            <div class="button-container">
-                <a href="estudiante-dashboard">
-                    <button class="button material-icons">home</button>
-                </a>
-                <a href="/comunicados">
-                    <button class="button material-icons">book</button>
-                </a>
-                <button class="button material-icons">person</button>
-                <a href="/logout">
-                    <button class="button material-icons">logout</button>
-                </a>
-            </div>
-        </footer>
+    <script>
+        fetch('/api/comunicados-data')
+            .then(response => response.json())
+            .then(comunicados => {
+                const comunicadosDiv = document.getElementById('comunicados');
+                if (comunicados.length > 0) {
+                    comunicados.forEach(comunicado => {
+                        const comunicadoDiv = document.createElement('div');
+                        comunicadoDiv.classList.add('comunicado');
+                        comunicadoDiv.innerHTML = `
+                            <h2>${comunicado.titulo}</h2>
+                            <p>${comunicado.info}</p>
+                            <small>Por: ${comunicado.fk_id_preceptor ? `${comunicado.fk_id_preceptor.nombre} ${comunicado.fk_id_preceptor.apellido}` : 'Directivo'}</small>
+                        `;
+                        comunicadosDiv.appendChild(comunicadoDiv);
+                    });
+                } else {
+                    comunicadosDiv.innerHTML = "<p>No hay comunicados disponibles.</p>";
+                }
+            })
+            .catch(error => console.error('Error al cargar los comunicados:', error));
+    </script>
+
+    <footer>
+        <div class="button-container">
+            <a href="estudiante-dashboard">
+                <button class="button material-icons">home</button>
+            </a>
+            <a href="/comunicados">
+                <button class="button material-icons">book</button>
+            </a>
+            <button class="button material-icons">person</button>
+            <a href="/logout">
+                <button class="button material-icons">logout</button>
+            </a>
+        </div>
+    </footer>
 </body>
 </html>

@@ -15,7 +15,8 @@ const Preceptor = require('./models/Preceptor');
 const Profesor = require('./models/Profesor');
 const Comunicado = require('./models/Comunicado');
 const Directivo = require('./models/Directivo');
-
+const Curso = require('./models/Curso'); // Asegúrate de importar el modelo de Curso
+const router = express.Router();
 connectDB();
 const app = express();
 
@@ -23,6 +24,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(cookieParser());
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+router.get('/register/preceptor', async (req, res) => {
+    try {
+        const cursos = await Curso.find(); // Obtener todos los cursos
+        res.render('registerPreceptor', { cursos }); // Pasar los cursos a la vista
+    } catch (error) {
+        console.error('Error al obtener cursos:', error);
+        res.status(500).send('Error al cargar el formulario.');
+    }
+});
 
 const authenticateToken = (req, res, next) => {
     const token = req.cookies.token;
@@ -47,27 +60,34 @@ app.get("/select-role", (req, res) => {
     res.sendFile(path.join(__dirname + "/selectRole.html"));
 });
 
-app.get('/register', (req, res) => {
+app.get('/register', async (req, res) => {
     const { role } = req.query;
 
-    switch (role) {
-        case 'preceptor':
-            res.sendFile(path.join(__dirname, 'registerPreceptor.html'));
-            break;
-        case 'profesor':
-            res.sendFile(path.join(__dirname, 'registerProfesor.html'));
-            break;
-        case 'estudiante':
-            res.sendFile(path.join(__dirname, 'registerEstudiante.html'));
-            break;
-        case 'responsable':
-            res.sendFile(path.join(__dirname, 'registerResponsable.html'));
-            break;
-        case 'directivo':
-            res.sendFile(path.join(__dirname, 'registerDirectivo.html')); // Asegúrate de que esta línea sea correcta
-            break;
-        default:
-            res.status(400).send('Rol no reconocido');
+    try {
+        const cursos = await Curso.find(); // Obtener todos los cursos para los formularios que lo requieran
+
+        switch (role) {
+            case 'preceptor':
+                res.render('registerPreceptor', { cursos });
+                break;
+            case 'profesor':
+                res.render('registerProfesor', { cursos });
+                break;
+            case 'estudiante':
+                res.render('registerEstudiante', { cursos });
+                break;
+            case 'responsable':
+                res.render('registerResponsable', { cursos });
+                break;
+            case 'directivo':
+                res.render('registerDirectivo', { cursos });
+                break;
+            default:
+                res.status(400).send('Rol no reconocido');
+        }
+    } catch (error) {
+        console.error('Error al obtener cursos:', error);
+        res.status(500).send('Error al cargar el formulario de registro.');
     }
 });
 
@@ -75,9 +95,15 @@ app.post('/register', async (req, res) => {
     try {
         const { role, dni, password, email, nroCarnet, ...data } = req.body;
 
+        // Verificar si el DNI ya está en uso
+        const existingDniUser = await User.findOne({ dni }).exec();
+        if (existingDniUser) {
+            return res.status(400).send('El DNI ya está en uso.');
+        }
+
         // Verificar si el correo electrónico ya está en uso
-        const existingUser = await User.findOne({ email }).exec();
-        if (existingUser) {
+        const existingEmailUser = await User.findOne({ email }).exec();
+        if (existingEmailUser) {
             return res.status(400).send('El correo electrónico ya está en uso.');
         }
 
@@ -273,26 +299,66 @@ app.get('/directivo-dashboard', authenticateToken, (req, res) => {
     res.sendFile(path.join(__dirname + '/directivoDashboard.html'));
 });
 
-app.get("/comunicado", (req, res) => {
-    res.sendFile(path.join(__dirname + "/createComunicado.html"));
+async function obtenerCursosPorPreceptor(preceptorId) {
+    const cursosPreceptor = await Curso_Preceptor.find({ fk_id_preceptor: preceptorId, dadoAlta: true }).populate('fk_id_curso').exec();
+    return cursosPreceptor.map(cp => `${cp.fk_id_curso.anio} ${cp.fk_id_curso.division}`);
+}
+
+app.get("/comunicado", authenticateToken, async (req, res) => {
+    try {
+        let cursos = [];
+        
+        // Si el usuario es preceptor, pasa la lista de cursos
+        if (req.user.role === 'preceptor') {
+            const preceptor = await Preceptor.findById(req.user.userId).exec();
+            cursos = await obtenerCursosPorPreceptor(preceptor._id);  // Función que obtiene los cursos del preceptor
+        }
+
+        res.render('createComunicado', {
+            user: req.user,
+            cursos: cursos
+        });
+    } catch (error) {
+        console.error('Error al cargar la vista de comunicado:', error);
+        res.status(400).send('Error al cargar la vista de comunicado.');
+    }
 });
+
 
 app.post('/comunicado', authenticateToken, async (req, res) => {
     try {
-        if (req.user.role !== 'preceptor') {
+        const { titulo, info, curso } = req.body;
+        let comunicado;
+
+        if (req.user.role === 'directivo') {
+            // Comunicado general para todos
+            comunicado = new Comunicado({
+                titulo,
+                info,
+                general: true,  // Este comunicado será visible para todos
+                fk_id_directivo: req.user.userId
+            });
+
+        } else if (req.user.role === 'preceptor') {
+            // Comunicado específico para un curso
+            if (!curso) {
+                return res.status(400).send('Debe seleccionar un curso para enviar el comunicado.');
+            }
+
+            comunicado = new Comunicado({
+                titulo,
+                info,
+                curso,
+                general: false,
+                fk_id_preceptor: req.user.userId
+            });
+
+        } else {
             return res.status(403).send('Acceso denegado');
         }
 
-        const { titulo, info, curso } = req.body;
-
-        const comunicado = new Comunicado({
-            titulo,
-            info,
-            curso,
-            fk_id_preceptor: req.user.userId
-        });
-
         await comunicado.save();
+
         res.status(201).send(`
             <!DOCTYPE html>
             <html lang="es">
@@ -305,12 +371,12 @@ app.post('/comunicado', authenticateToken, async (req, res) => {
             <body>
                 <div class="message-container">
                     <h1>Comunicado creado con éxito</h1>
-                    <a href="/preceptor-dashboard" class="btn">Ir a mi inicio</a>
+                    <a href="/${req.user.role}-dashboard" class="btn">Ir a mi inicio</a>
                 </div>
             </body>
             </html>
         `);
-        
+
     } catch (error) {
         console.error('Error al crear comunicado:', error);
         res.status(400).send('Error al crear comunicado');
@@ -332,15 +398,27 @@ app.get('/comunicados', authenticateToken, async (req, res) => {
 
 app.get('/api/comunicados-data', authenticateToken, async (req, res) => {
     try {
+        // Verificar que el usuario es un estudiante
+        if (req.user.role !== 'estudiante') {
+            return res.status(403).send('Acceso denegado');
+        }
+
         const estudiante = await Estudiante.findById(req.user.userId).exec();
-        const comunicados = await Comunicado.find({ curso: estudiante.cursoPerteneciente }).populate('fk_id_preceptor').exec();
+        
+        // Buscar comunicados generales o específicos de su curso
+        const comunicados = await Comunicado.find({
+            $or: [
+                { general: true },  // Comunicado general
+                { curso: estudiante.cursoPerteneciente }  // Comunicado dirigido a su curso
+            ]
+        }).populate('fk_id_preceptor').exec();
+
         res.status(200).json(comunicados);
     } catch (error) {
         console.error('Error al obtener comunicados:', error);
         res.status(400).send('Error al obtener comunicados');
     }
 });
-
 
 app.listen(3000, () => {
     console.log('Servidor escuchando en http://localhost:3000');
