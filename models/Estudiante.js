@@ -5,9 +5,8 @@ const EstudianteSchema = new mongoose.Schema({
     nombre: { type: String, required: true },
     apellido: { type: String, required: true },
     dni: { type: String, required: true, unique: true },
-    username: { type: String, required: true, unique: true },
-    cursoPerteneciente: { type: String, required: true, enum: ['7° 1°', '6° 1°', '5° 1°'] },
-    email: { type: String, required: true, unique: true }, // Añadir email
+    cursoPerteneciente: { type: mongoose.Schema.Types.ObjectId, ref: 'Curso', required: true }, // Cambiado a ObjectId
+    email: { type: String, required: true, unique: true }, 
 });
 
 module.exports = mongoose.model('Estudiante', EstudianteSchema);
