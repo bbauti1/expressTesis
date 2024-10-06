@@ -16,6 +16,7 @@ const Profesor = require('./models/Profesor');
 const Comunicado = require('./models/Comunicado');
 const Directivo = require('./models/Directivo');
 const Curso = require('./models/Curso'); // Asegúrate de importar el modelo de Curso
+const Curso_Preceptor = require('./models/Curso_Preceptor')
 const router = express.Router();
 connectDB();
 const app = express();
@@ -299,24 +300,28 @@ app.get('/directivo-dashboard', authenticateToken, (req, res) => {
     res.sendFile(path.join(__dirname + '/directivoDashboard.html'));
 });
 
-async function obtenerCursosPorPreceptor(preceptorId) {
-    const cursosPreceptor = await Curso_Preceptor.find({ fk_id_preceptor: preceptorId, dadoAlta: true }).populate('fk_id_curso').exec();
-    return cursosPreceptor.map(cp => `${cp.fk_id_curso.anio} ${cp.fk_id_curso.division}`);
+async function obtenerCursoDePreceptor(preceptorId) {
+    const preceptor = await Preceptor.findById(preceptorId).populate('cursoACargo').exec();
+    if (!preceptor) {
+        throw new Error('Preceptor no encontrado');
+    }
+    return preceptor.cursoACargo; // Asegúrate de que esto devuelva un objeto de curso completo
 }
+
 
 app.get("/comunicado", authenticateToken, async (req, res) => {
     try {
         let cursos = [];
         
-        // Si el usuario es preceptor, pasa la lista de cursos
+        // Si el usuario es preceptor, obtener su curso
         if (req.user.role === 'preceptor') {
-            const preceptor = await Preceptor.findById(req.user.userId).exec();
-            cursos = await obtenerCursosPorPreceptor(preceptor._id);  // Función que obtiene los cursos del preceptor
+            const cursoId = await obtenerCursoDePreceptor(req.user.userId);
+            cursos.push(cursoId);  // Agrega solo el ObjectId
         }
 
         res.render('createComunicado', {
             user: req.user,
-            cursos: cursos
+            cursos: cursos // Esto debe ser un array de ObjectIds
         });
     } catch (error) {
         console.error('Error al cargar la vista de comunicado:', error);
@@ -324,25 +329,27 @@ app.get("/comunicado", authenticateToken, async (req, res) => {
     }
 });
 
-
 app.post('/comunicado', authenticateToken, async (req, res) => {
     try {
         const { titulo, info, curso } = req.body;
+        
+        // Agrega este console.log para ver el valor de curso
+        console.log('ID del curso recibido:', curso);
+
         let comunicado;
 
         if (req.user.role === 'directivo') {
-            // Comunicado general para todos
             comunicado = new Comunicado({
                 titulo,
                 info,
-                general: true,  // Este comunicado será visible para todos
+                general: true,
                 fk_id_directivo: req.user.userId
             });
 
         } else if (req.user.role === 'preceptor') {
-            // Comunicado específico para un curso
-            if (!curso) {
-                return res.status(400).send('Debe seleccionar un curso para enviar el comunicado.');
+            // Verifica si el curso es válido
+            if (!curso || !mongoose.Types.ObjectId.isValid(curso)) {
+                return res.status(400).send('Debe seleccionar un curso válido para enviar el comunicado.');
             }
 
             comunicado = new Comunicado({
@@ -352,7 +359,6 @@ app.post('/comunicado', authenticateToken, async (req, res) => {
                 general: false,
                 fk_id_preceptor: req.user.userId
             });
-
         } else {
             return res.status(403).send('Acceso denegado');
         }

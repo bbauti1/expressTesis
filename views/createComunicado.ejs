@@ -20,12 +20,13 @@
             <label for="curso">Curso:</label>
             <select id="curso" name="curso" required>
                 <% cursos.forEach(function(curso) { %>
-                    <option value="<%= curso %>"><%= curso %></option>
+                    <option value="<%= curso._id %>"><%= curso.anio + 'º '+ curso.division + 'º'  %></option>
                 <% }) %>
             </select><br><br>
         <% } else if (user.role === 'directivo') { %>
             <p>Este comunicado será visible para todos los usuarios.</p>
         <% } %>
+        
 
         <button type="submit">Crear Comunicado</button>
     </form>
