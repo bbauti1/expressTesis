@@ -300,6 +300,73 @@ app.get('/directivo-dashboard', authenticateToken, (req, res) => {
     res.sendFile(path.join(__dirname + '/directivoDashboard.html'));
 });
 
+// Ruta GET para mostrar los cursos disponibles para asignar al preceptor
+// Ruta GET para mostrar los cursos disponibles para asignar al preceptor
+app.get('/elegir-curso', authenticateToken, async (req, res) => {
+    try {
+        // Solo preceptores pueden acceder a esta ruta
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        // Obtener todos los cursos
+        const todosLosCursos = await Curso.find();
+
+        // Obtener los cursos que ya están asignados a algún preceptor
+        const cursosTomados = await Curso_Preceptor.find().distinct('fk_id_curso');
+
+        // Filtrar los cursos que ya están tomados
+        const cursosDisponibles = todosLosCursos.filter(curso => 
+            !cursosTomados.some(cursoTomadoId => cursoTomadoId.equals(curso._id))
+        );
+
+        res.render('elegirCurso', {
+            user: req.user,
+            cursos: cursosDisponibles  // Pasamos solo los cursos disponibles al select
+        });
+
+    } catch (error) {
+        console.error('Error al cargar la vista de elegir curso:', error);
+        res.status(500).send('Error al cargar la vista de elegir curso.');
+    }
+});
+
+// Ruta POST para que el preceptor seleccione cursos
+app.post('/elegir-curso', authenticateToken, async (req, res) => {
+    try {
+        const { cursosSeleccionados } = req.body; // Recibir array de cursos
+
+        // Verificar que sea preceptor
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        // Asignar los cursos seleccionados al preceptor
+        if (Array.isArray(cursosSeleccionados)) {
+            await Promise.all(cursosSeleccionados.map(async (cursoId) => {
+                const nuevoCursoPreceptor = new Curso_Preceptor({
+                    fk_id_preceptor: req.user.userId,
+                    fk_id_curso: cursoId
+                });
+                await nuevoCursoPreceptor.save();
+            }));
+        } else {
+            // Si no es un array (solo un curso seleccionado)
+            const nuevoCursoPreceptor = new Curso_Preceptor({
+                fk_id_preceptor: req.user.userId,
+                fk_id_curso: cursosSeleccionados
+            });
+            await nuevoCursoPreceptor.save();
+        }
+
+        res.redirect('/preceptor-dashboard'); // Redirigir a su dashboard después de guardar los cursos
+
+    } catch (error) {
+        console.error('Error al asignar cursos al preceptor:', error);
+        res.status(500).send('Error al asignar los cursos.');
+    }
+});
+
 async function obtenerCursoDePreceptor(preceptorId) {
     const preceptor = await Preceptor.findById(preceptorId).populate('cursoACargo').exec();
     if (!preceptor) {
@@ -312,22 +379,22 @@ async function obtenerCursoDePreceptor(preceptorId) {
 app.get("/comunicado", authenticateToken, async (req, res) => {
     try {
         let cursos = [];
-        
-        // Si el usuario es preceptor, obtener su curso
+
         if (req.user.role === 'preceptor') {
-            const cursoId = await obtenerCursoDePreceptor(req.user.userId);
-            cursos.push(cursoId);  // Agrega solo el ObjectId
+            // Buscar los cursos que tiene a cargo en Curso_Preceptor
+            cursos = await Curso_Preceptor.find({ fk_id_preceptor: req.user.userId }).populate('fk_id_curso').exec();
         }
 
         res.render('createComunicado', {
             user: req.user,
-            cursos: cursos // Esto debe ser un array de ObjectIds
+            cursos: cursos // Cursos donde el preceptor está a cargo
         });
     } catch (error) {
         console.error('Error al cargar la vista de comunicado:', error);
         res.status(400).send('Error al cargar la vista de comunicado.');
     }
 });
+
 
 app.post('/comunicado', authenticateToken, async (req, res) => {
     try {

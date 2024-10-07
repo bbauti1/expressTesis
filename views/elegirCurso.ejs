@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Elegir Cursos</title>
+</head>
+<body>
+    <h1>Selecciona los Cursos a Cargo</h1>
+    <form action="/elegir-curso" method="POST">
+        <label for="cursos">Cursos Disponibles:</label>
+        <select id="cursos" name="cursosSeleccionados" multiple required>
+            <% cursos.forEach(function(curso) { %>
+                <option value="<%= curso._id %>"><%= curso.anio + 'º ' + curso.division %></option>
+            <% }) %>
+        </select><br><br>
+        <button type="submit">Guardar Cursos</button>
+    </form>
+</body>
+</html>

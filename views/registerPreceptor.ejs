@@ -23,13 +23,6 @@
         <label for="dni">DNI:</label>
         <input type="text" id="dni" name="dni" required><br>
 
-        <label for="cursoACargo">Curso a Cargo:</label>
-        <select id="cursoACargo" name="cursoACargo" required>
-            <% cursos.forEach(curso => { %>
-                <option value="<%= curso._id %>"><%= curso.anio + ' ' + curso.division %></option>
-            <% }); %>
-        </select><br>
-
         <label for="password">Contraseña:</label>
         <input type="password" id="password" name="password" required>
         <br>
