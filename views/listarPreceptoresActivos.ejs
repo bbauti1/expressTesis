@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Preceptores Activos</title>
+</head>
+<body>
+    <h1>Preceptores Dados de Alta</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>DNI</th>
+                <th>Email</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% preceptores.forEach(function(preceptor) { %>
+                <tr>
+                    <td><%= preceptor.nombre %></td>
+                    <td><%= preceptor.apellido %></td>
+                    <td><%= preceptor.dni %></td>
+                    <td><%= preceptor.email %></td>
+                    <td>
+                        <form action="/dar-baja-preceptor/<%= preceptor._id %>" method="POST">
+                            <button type="submit">Dar de baja</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <a href="/directivo-dashboard">Volver al Dashboard</a>
+</body>
+</html>

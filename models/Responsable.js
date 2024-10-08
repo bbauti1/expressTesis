@@ -6,7 +6,7 @@ const ResponsableSchema = new mongoose.Schema({
     dni: { type: String, required: true, unique: true },
     telefono: { type: String, required: true },
     dniACargo: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true }, // Añadir email
+    email: { type: String, required: true, unique: true },
 });
 
 module.exports = mongoose.model('Responsable', ResponsableSchema);

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Listado de Preceptores Pendientes</title>
+</head>
+<body>
+    <h1>Solicitudes de Preceptores</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>DNI</th>
+                <th>Email</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% preceptores.forEach(function(preceptor) { %>
+                <tr>
+                    <td><%= preceptor.nombre %></td>
+                    <td><%= preceptor.apellido %></td>
+                    <td><%= preceptor.dni %></td>
+                    <td><%= preceptor.email %></td>
+                    <td>
+                        <form action="/preceptor/aceptar/<%= preceptor._id %>" method="POST" style="display:inline;">
+                            <button type="submit">Aceptar</button>
+                        </form>
+                        <form action="/preceptor/rechazar/<%= preceptor._id %>" method="POST" style="display:inline;">
+                            <button type="submit">Rechazar</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</body>
+</html>

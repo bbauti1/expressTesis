@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Preceptores Dados de Baja</title>
+</head>
+<body>
+    <h1>Preceptores Dados de Baja</h1>
+    
+    <% if (preceptores.length > 0) { %>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>DNI</th>
+                    <th>Email</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% preceptores.forEach(preceptor => { %>
+                    <tr>
+                        <td><%= preceptor.nombre %></td>
+                        <td><%= preceptor.apellido %></td>
+                        <td><%= preceptor.dni %></td>
+                        <td><%= preceptor.email %></td>
+                        <td>
+                            <form action="/dar-alta-preceptor/<%= preceptor._id %>" method="POST">
+                                <button type="submit">Dar de Alta</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    <% } else { %>
+        <p>No hay preceptores dados de baja.</p>
+    <% } %>
+
+    <a href="/directivo-dashboard">Volver al Dashboard</a>
+</body>
+</html>

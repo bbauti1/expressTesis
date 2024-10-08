@@ -15,7 +15,7 @@ const Preceptor = require('./models/Preceptor');
 const Profesor = require('./models/Profesor');
 const Comunicado = require('./models/Comunicado');
 const Directivo = require('./models/Directivo');
-const Curso = require('./models/Curso'); // Asegúrate de importar el modelo de Curso
+const Curso = require('./models/Curso');
 const Curso_Preceptor = require('./models/Curso_Preceptor')
 const router = express.Router();
 connectDB();
@@ -30,8 +30,8 @@ app.set('views', path.join(__dirname, 'views'));
 
 router.get('/register/preceptor', async (req, res) => {
     try {
-        const cursos = await Curso.find(); // Obtener todos los cursos
-        res.render('registerPreceptor', { cursos }); // Pasar los cursos a la vista
+        const cursos = await Curso.find(); 
+        res.render('registerPreceptor', { cursos });
     } catch (error) {
         console.error('Error al obtener cursos:', error);
         res.status(500).send('Error al cargar el formulario.');
@@ -65,7 +65,7 @@ app.get('/register', async (req, res) => {
     const { role } = req.query;
 
     try {
-        const cursos = await Curso.find(); // Obtener todos los cursos para los formularios que lo requieran
+        const cursos = await Curso.find();
 
         switch (role) {
             case 'preceptor':
@@ -96,13 +96,11 @@ app.post('/register', async (req, res) => {
     try {
         const { role, dni, password, email, nroCarnet, ...data } = req.body;
 
-        // Verificar si el DNI ya está en uso
         const existingDniUser = await User.findOne({ dni }).exec();
         if (existingDniUser) {
             return res.status(400).send('El DNI ya está en uso.');
         }
 
-        // Verificar si el correo electrónico ya está en uso
         const existingEmailUser = await User.findOne({ email }).exec();
         if (existingEmailUser) {
             return res.status(400).send('El correo electrónico ya está en uso.');
@@ -110,11 +108,9 @@ app.post('/register', async (req, res) => {
 
         let newUser;
 
-        // Asegúrate de que los campos username y email se incluyan correctamente
         data.username = dni;
         data.email = email;
 
-        // Crear un nuevo usuario basado en el rol
         switch (role) {
             case 'preceptor':
                 newUser = new Preceptor({ ...data, dni });
@@ -128,8 +124,8 @@ app.post('/register', async (req, res) => {
             case 'responsable':
                 newUser = new Responsable({ ...data, dni });
                 break;
-            case 'directivo': // Asegúrate de que este caso esté incluido
-                newUser = new Directivo({ ...data, dni }); // Aquí es donde utilizas data
+            case 'directivo':
+                newUser = new Directivo({ ...data, dni });
                 break;
             default:
                 return res.status(400).send('Rol no reconocido');
@@ -144,18 +140,16 @@ app.post('/register', async (req, res) => {
             dni: dni,
             password: hashedPassword,
             role: role,
-            email: email,  // Guardar email
+            email: email, 
             [`fk_id_${role}`]: newUser._id
         });
 
         await user.save();
 
-        // Generar token de verificación
         const verificationToken = crypto.randomBytes(32).toString('hex');
         user.verificationToken = verificationToken;
         await user.save();
 
-        // Enviar correo de verificación
         sendVerificationEmail(email, verificationToken);
 
         res.status(201).send('Registro exitoso. Por favor, verifica tu cuenta por email.');
@@ -168,7 +162,7 @@ app.post('/register', async (req, res) => {
 app.get('/verify-email', async (req, res) => {
     const { token } = req.query;
 
-    console.log('Token recibido:', token); // Debugging
+    console.log('Token recibido:', token);
 
     try {
         const user = await User.findOne({ verificationToken: token }).exec();
@@ -178,7 +172,7 @@ app.get('/verify-email', async (req, res) => {
         }
 
         user.isVerified = true;
-        user.verificationToken = null;  // Eliminar el token una vez verificado
+        user.verificationToken = null; 
         await user.save();
 
         res.redirect('/login');
@@ -195,7 +189,6 @@ const loginUser = async (dni, password) => {
         throw new Error('Usuario no encontrado');
     }
 
-    // Verificar si el usuario ha verificado su cuenta
     if (!user.isVerified) {
         throw new Error('Por favor, verifica tu email antes de iniciar sesión.');
     }
@@ -215,25 +208,22 @@ const loginUser = async (dni, password) => {
             roleModel = Responsable;
             break;
         case 'directivo':
-            roleModel = Directivo; // Asignar el modelo Directivo
+            roleModel = Directivo;
             break;
         default:
             throw new Error('Rol no encontrado');
     }
 
-    // Buscar el usuario del rol correspondiente
     const roleUser = await roleModel.findById(user[`fk_id_${user.role}`]).exec();
     if (!roleUser) {
         throw new Error('Usuario correspondiente no encontrado');
     }
 
-    // Verificar si la contraseña es correcta
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
         throw new Error('Contraseña incorrecta');
     }
 
-    // Retornar la información del usuario
     return { ...roleUser.toObject(), role: user.role };
 };
 
@@ -243,13 +233,12 @@ app.get("/login", (req, res) => {
 
 app.post('/login', async (req, res) => {
     try {
-        const { dni, password } = req.body;  // Ahora usa DNI
-        const user = await loginUser(dni, password);  // Inicia sesión con DNI
+        const { dni, password } = req.body; 
+        const user = await loginUser(dni, password);
         const token = jwt.sign({ userId: user._id, role: user.role }, 'tu_secreto', { expiresIn: '1h' });
 
         res.cookie('token', token, { httpOnly: true });
 
-        // Redirigir al dashboard correspondiente según el rol
         switch (user.role) {
             case 'preceptor':
                 res.redirect('/preceptor-dashboard');
@@ -264,7 +253,7 @@ app.post('/login', async (req, res) => {
                 res.redirect('/responsable-dashboard');
                 break;
             case 'directivo':
-                res.redirect('/directivo-dashboard'); // Redirigir a dashboard del Directivo
+                res.redirect('/directivo-dashboard');
                 break;
             default:
                 res.status(400).send('Rol no reconocido');
@@ -280,9 +269,40 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 
-app.get('/preceptor-dashboard', authenticateToken, (req, res) => {
-    res.sendFile(path.join(__dirname + '/preceptorDashboard.html'));
+// Ruta GET para manejar el redireccionamiento del preceptor según su estado
+app.get('/preceptor-dashboard', authenticateToken, async (req, res) => {
+    try {
+        // Verifica que el usuario sea un preceptor
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        // Busca el preceptor en la base de datos para verificar su estado
+        const preceptor = await Preceptor.findById(req.user.userId);
+
+        if (!preceptor) {
+            return res.status(404).send('Preceptor no encontrado');
+        }
+
+        // Redirige según el estado del preceptor
+        if (preceptor.estado === 'pendiente') {
+            res.sendFile(path.join(__dirname, '/esperaDashboard.html')); // Redirige al dashboard de espera
+        } else if (preceptor.estado === 'rechazado') {
+            res.sendFile(path.join(__dirname, '/rechazadoDashboard.html')); // Redirige al dashboard de rechazo
+        } else if (preceptor.estado === 'aceptado') {
+            res.sendFile(path.join(__dirname, '/preceptorDashboard.html')); // Redirige al dashboard de preceptor
+        } else if(preceptor.estado === 'dadobaja') {
+            res.sendFile(path.join(__dirname, '/preceptorDadoBaja.html'));
+        }else {
+            res.status(400).send('Estado de preceptor no válido');
+        }
+
+    } catch (error) {
+        console.error('Error al redirigir al dashboard del preceptor:', error);
+        res.status(500).send('Error interno del servidor');
+    }
 });
+
 
 app.get('/profesor-dashboard', authenticateToken, (req, res) => {
     res.sendFile(path.join(__dirname + '/profesorDashboard.html'));
@@ -300,29 +320,143 @@ app.get('/directivo-dashboard', authenticateToken, (req, res) => {
     res.sendFile(path.join(__dirname + '/directivoDashboard.html'));
 });
 
-// Ruta GET para mostrar los cursos disponibles para asignar al preceptor
-// Ruta GET para mostrar los cursos disponibles para asignar al preceptor
+// Ruta GET para mostrar preceptores con estado 'pendiente'
+app.get('/preceptores/pendientes', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        const preceptoresPendientes = await Preceptor.find({ estado: 'pendiente' });
+        res.render('listarPreceptores', { preceptores: preceptoresPendientes });
+
+    } catch (error) {
+        console.error('Error al cargar la lista de preceptores:', error);
+        res.status(500).send('Error al cargar la lista de preceptores.');
+    }
+});
+
+// Ruta POST para aceptar un preceptor
+app.post('/preceptor/aceptar/:id', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        await Preceptor.findByIdAndUpdate(req.params.id, { estado: 'aceptado' });
+        res.redirect('/preceptores/pendientes');
+
+    } catch (error) {
+        console.error('Error al aceptar preceptor:', error);
+        res.status(500).send('Error al aceptar preceptor.');
+    }
+});
+
+// Ruta POST para rechazar un preceptor
+app.post('/preceptor/rechazar/:id', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        await Preceptor.findByIdAndUpdate(req.params.id, { estado: 'rechazado' });
+        res.redirect('/preceptores/pendientes');
+
+    } catch (error) {
+        console.error('Error al rechazar preceptor:', error);
+        res.status(500).send('Error al rechazar preceptor.');
+    }
+});
+
+app.get('/preceptores-activos', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        const preceptoresActivos = await Preceptor.find({ estado: 'aceptado' });
+
+        res.render('listarPreceptoresActivos', { preceptores: preceptoresActivos });
+    } catch (error) {
+        console.error('Error al cargar los preceptores activos:', error);
+        res.status(500).send('Error al cargar los preceptores activos.');
+    }
+});
+
+app.post('/dar-baja-preceptor/:id', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        const preceptorId = req.params.id;
+        await Preceptor.findByIdAndUpdate(preceptorId, { estado: 'dadobaja' });
+
+        res.redirect('/preceptores-activos');
+    } catch (error) {
+        console.error('Error al dar de baja al preceptor:', error);
+        res.status(500).send('Error al dar de baja al preceptor.');
+    }
+});
+
+// Ruta GET para listar preceptores dados de baja
+app.get('/preceptores-baja', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        // Buscar preceptores en estado dado de baja
+        const preceptoresBaja = await Preceptor.find({ estado: 'dadobaja' });
+
+        res.render('listarPreceptoresBaja', {
+            preceptores: preceptoresBaja
+        });
+
+    } catch (error) {
+        console.error('Error al listar preceptores dados de baja:', error);
+        res.status(500).send('Error al listar preceptores dados de baja.');
+    }
+});
+
+// Ruta POST para dar de alta a un preceptor dado de baja
+app.post('/dar-alta-preceptor/:id', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        const preceptorId = req.params.id;
+
+        // Cambiar el estado del preceptor a 'aceptado'
+        await Preceptor.findByIdAndUpdate(preceptorId, { estado: 'aceptado' });
+
+        res.redirect('/preceptores-baja'); // Redirigir al listado de preceptores dados de baja
+
+    } catch (error) {
+        console.error('Error al dar de alta al preceptor:', error);
+        res.status(500).send('Error al dar de alta al preceptor.');
+    }
+});
+
+
 app.get('/elegir-curso', authenticateToken, async (req, res) => {
     try {
-        // Solo preceptores pueden acceder a esta ruta
         if (req.user.role !== 'preceptor') {
             return res.status(403).send('Acceso denegado');
         }
 
-        // Obtener todos los cursos
         const todosLosCursos = await Curso.find();
 
-        // Obtener los cursos que ya están asignados a algún preceptor
         const cursosTomados = await Curso_Preceptor.find().distinct('fk_id_curso');
 
-        // Filtrar los cursos que ya están tomados
         const cursosDisponibles = todosLosCursos.filter(curso => 
             !cursosTomados.some(cursoTomadoId => cursoTomadoId.equals(curso._id))
         );
 
         res.render('elegirCurso', {
             user: req.user,
-            cursos: cursosDisponibles  // Pasamos solo los cursos disponibles al select
+            cursos: cursosDisponibles 
         });
 
     } catch (error) {
@@ -331,17 +465,15 @@ app.get('/elegir-curso', authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta POST para que el preceptor seleccione cursos
 app.post('/elegir-curso', authenticateToken, async (req, res) => {
     try {
-        const { cursosSeleccionados } = req.body; // Recibir array de cursos
+        const { cursosSeleccionados } = req.body;
 
-        // Verificar que sea preceptor
+    
         if (req.user.role !== 'preceptor') {
             return res.status(403).send('Acceso denegado');
         }
 
-        // Asignar los cursos seleccionados al preceptor
         if (Array.isArray(cursosSeleccionados)) {
             await Promise.all(cursosSeleccionados.map(async (cursoId) => {
                 const nuevoCursoPreceptor = new Curso_Preceptor({
@@ -351,7 +483,6 @@ app.post('/elegir-curso', authenticateToken, async (req, res) => {
                 await nuevoCursoPreceptor.save();
             }));
         } else {
-            // Si no es un array (solo un curso seleccionado)
             const nuevoCursoPreceptor = new Curso_Preceptor({
                 fk_id_preceptor: req.user.userId,
                 fk_id_curso: cursosSeleccionados
@@ -359,7 +490,7 @@ app.post('/elegir-curso', authenticateToken, async (req, res) => {
             await nuevoCursoPreceptor.save();
         }
 
-        res.redirect('/preceptor-dashboard'); // Redirigir a su dashboard después de guardar los cursos
+        res.redirect('/preceptor-dashboard');
 
     } catch (error) {
         console.error('Error al asignar cursos al preceptor:', error);
@@ -372,7 +503,7 @@ async function obtenerCursoDePreceptor(preceptorId) {
     if (!preceptor) {
         throw new Error('Preceptor no encontrado');
     }
-    return preceptor.cursoACargo; // Asegúrate de que esto devuelva un objeto de curso completo
+    return preceptor.cursoACargo; 
 }
 
 
@@ -381,13 +512,12 @@ app.get("/comunicado", authenticateToken, async (req, res) => {
         let cursos = [];
 
         if (req.user.role === 'preceptor') {
-            // Buscar los cursos que tiene a cargo en Curso_Preceptor
             cursos = await Curso_Preceptor.find({ fk_id_preceptor: req.user.userId }).populate('fk_id_curso').exec();
         }
 
         res.render('createComunicado', {
             user: req.user,
-            cursos: cursos // Cursos donde el preceptor está a cargo
+            cursos: cursos 
         });
     } catch (error) {
         console.error('Error al cargar la vista de comunicado:', error);
@@ -400,7 +530,6 @@ app.post('/comunicado', authenticateToken, async (req, res) => {
     try {
         const { titulo, info, curso } = req.body;
         
-        // Agrega este console.log para ver el valor de curso
         console.log('ID del curso recibido:', curso);
 
         let comunicado;
@@ -414,7 +543,6 @@ app.post('/comunicado', authenticateToken, async (req, res) => {
             });
 
         } else if (req.user.role === 'preceptor') {
-            // Verifica si el curso es válido
             if (!curso || !mongoose.Types.ObjectId.isValid(curso)) {
                 return res.status(400).send('Debe seleccionar un curso válido para enviar el comunicado.');
             }
@@ -471,18 +599,16 @@ app.get('/comunicados', authenticateToken, async (req, res) => {
 
 app.get('/api/comunicados-data', authenticateToken, async (req, res) => {
     try {
-        // Verificar que el usuario es un estudiante
         if (req.user.role !== 'estudiante') {
             return res.status(403).send('Acceso denegado');
         }
 
         const estudiante = await Estudiante.findById(req.user.userId).exec();
         
-        // Buscar comunicados generales o específicos de su curso
         const comunicados = await Comunicado.find({
             $or: [
-                { general: true },  // Comunicado general
-                { curso: estudiante.cursoPerteneciente }  // Comunicado dirigido a su curso
+                { general: true },  
+                { curso: estudiante.cursoPerteneciente } 
             ]
         }).populate('fk_id_preceptor').exec();
 
