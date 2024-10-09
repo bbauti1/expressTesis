@@ -19,11 +19,14 @@
                 Curso: <%= curso.anio %> - <%= curso.division %> 
                 <a href="/estudiantes/pendientes/<%= curso._id %>">Ver estudiantes pendientes</a> |
                 <a href="/estudiantes-rechazados/<%= curso._id %>">Ver estudiantes rechazados</a> |
-                <a href="/estudiantes-aceptados/<%= curso._id %>">Ver estudiantes aceptados</a>
+                <a href="/estudiantes-aceptados/<%= curso._id %>">Ver estudiantes aceptados</a> |
+                <a href="/estudiantes-baja/<%= curso._id %>">Ver estudiantes dados de baja</a>
+                
             </li>
         <% }); %>
     </ul>
     <br> <a href="/comunicado"> Crear comunicado. </a>
+    <br> <a href="/comunicados-preceptor"> Mis comunicados. </a>
     <br> <a href="/elegir-curso"> Elegir curso. </a>
     <br> <a href="/logout"> Cerrar sesión</a>
     <footer>

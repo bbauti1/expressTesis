@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Comunicados Enviados</title>
+</head>
+<body>
+    <h1>Comunicados Enviados por el Preceptor</h1>
+
+    <h2>Filtrar por curso:</h2>
+    <form action="/comunicados-preceptor" method="GET">
+        <select name="cursoId">
+            <% cursos.forEach(function(curso) { %>
+                <option value="<%= curso._id %>">Año: <%= curso.anio %>, División: <%= curso.division %></option>
+            <% }) %>
+        </select>
+        <button type="submit">Filtrar</button>
+    </form>
+
+    <h2>Comunicados:</h2>
+    <% if (comunicados.length > 0) { %>
+        <ul>
+            <% comunicados.forEach(function(comunicado) { %>
+                <li>
+                    <strong>Título:</strong> <%= comunicado.titulo %><br>
+                    <strong>Información:</strong> <%= comunicado.info %><br>
+                    <strong>Curso:</strong> Año: <%= comunicado.curso.anio %>, División: <%= comunicado.curso.division %><br>
+                    <strong>Fecha de Envío:</strong>
+                    <% if (comunicado.createdAt) { %>
+                        <%= comunicado.createdAt.toDateString() %>
+                    <% } else { %>
+                        Fecha no disponible
+                    <% } %>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <p>No se encontraron comunicados.</p>
+    <% } %>
+
+    <a href="/preceptor-dashboard">Volver al Dashboard</a>
+</body>
+</html>

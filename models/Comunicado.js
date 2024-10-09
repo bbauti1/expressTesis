@@ -6,7 +6,8 @@ const comunicadoSchema = new mongoose.Schema({
     curso: { type: mongoose.Schema.Types.ObjectId, ref: 'Curso', default: null },  // Puede ser null si es general
     general: { type: Boolean, default: false },  // Indica si es un comunicado general para todos
     fk_id_preceptor: { type: mongoose.Schema.Types.ObjectId, ref: 'Preceptor', default: null },
-    fk_id_directivo: { type: mongoose.Schema.Types.ObjectId, ref: 'Directivo', default: null }
+    fk_id_directivo: { type: mongoose.Schema.Types.ObjectId, ref: 'Directivo', default: null },
+    createdAt: { type: Date, default: Date.now },  // Campo de fecha de creación
 });
 
 module.exports = mongoose.model('Comunicado', comunicadoSchema);

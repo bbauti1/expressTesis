@@ -328,6 +328,9 @@ app.get('/estudiante-dashboard', authenticateToken, async (req, res) => {
             case 'aceptado':
                 res.render('estudianteDashboard', { estudiante });
                 break;
+            case 'dadobaja':
+                res.sendFile(path.join(__dirname, '/dadoBajaEstudiante.html'));
+                break;
             default:
                 res.status(400).send('Estado del estudiante no válido');
         }
@@ -576,6 +579,57 @@ app.get('/estudiantes-aceptados/:cursoId', authenticateToken, async (req, res) =
     }
 });
 
+app.post('/dar-baja-estudiante/:id/:cursoId', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        // Cambiar el estado del estudiante a 'dadobaja'
+        await Estudiante.findByIdAndUpdate(req.params.id, { estado: 'dadobaja' });
+
+        // Redirigir de nuevo a la lista de estudiantes aceptados
+        res.redirect(`/estudiantes-aceptados/${req.params.cursoId}`);
+    } catch (error) {
+        console.error('Error al dar de baja al estudiante:', error);
+        res.status(500).send('Error al dar de baja al estudiante.');
+    }
+});
+
+app.get('/estudiantes-baja/:cursoId', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        // Buscar los estudiantes dados de baja para un curso específico
+        const estudiantesBaja = await Estudiante.find({ cursoPerteneciente: req.params.cursoId, estado: 'dadobaja' });
+        res.render('listarEstudiantesBaja', { estudiantes: estudiantesBaja });
+    } catch (error) {
+        console.error('Error al cargar estudiantes dados de baja:', error);
+        res.status(500).send('Error al cargar estudiantes dados de baja.');
+    }
+});
+
+app.post('/dar-alta-estudiante/:id/:cursoId', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        // Cambiar el estado del estudiante a 'aceptado'
+        await Estudiante.findByIdAndUpdate(req.params.id, { estado: 'aceptado' });
+
+        // Redirigir a la lista de estudiantes dados de baja
+        res.redirect(`/estudiantes-baja/${req.params.cursoId}`);
+    } catch (error) {
+        console.error('Error al dar de alta al estudiante:', error);
+        res.status(500).send('Error al dar de alta al estudiante.');
+    }
+});
+
+
+
 app.get('/preceptores-cursos', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'directivo') {
@@ -754,6 +808,29 @@ app.get('/comunicados', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error al obtener comunicados:', error);
         res.status(400).send('Error al obtener comunicados');
+    }
+});
+
+app.get('/comunicados-preceptor', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        // Obtener los cursos asignados al preceptor
+        const cursosAsignados = await Curso_Preceptor.find({ fk_id_preceptor: req.user.userId }).populate('fk_id_curso').exec();
+
+        // Obtener los comunicados enviados por el preceptor, filtrados por curso si se ha especificado uno
+        const filtroCurso = req.query.cursoId ? { curso: req.query.cursoId } : {};
+        const comunicados = await Comunicado.find({
+            fk_id_preceptor: req.user.userId,  // Comunicados enviados por el preceptor
+            ...filtroCurso
+        }).populate('curso').exec();
+
+        res.render('comunicadosPreceptor', { comunicados, cursos: cursosAsignados.map(cp => cp.fk_id_curso) });
+    } catch (error) {
+        console.error('Error al obtener comunicados del preceptor:', error);
+        res.status(500).send('Error al obtener los comunicados.');
     }
 });
 
