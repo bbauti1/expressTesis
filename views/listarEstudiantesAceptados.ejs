@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudiantes Aceptados</title>
+</head>
+<body>
+    <h1>Estudiantes Aceptados para el curso</h1>
+
+    <% if (estudiantes.length === 0) { %>
+        <p>No hay estudiantes aceptados en este momento.</p>
+    <% } else { %>
+        <ul>
+            <% estudiantes.forEach(estudiante => { %>
+                <li>
+                    <%= estudiante.apellido %> <%= estudiante.nombre %> - <%= estudiante.dni %> - <%= estudiante.email %>
+                </li>
+            <% }) %>
+        </ul>
+    <% } %>
+
+    <a href="/preceptor-dashboard">Volver al dashboard</a>
+</body>
+</html>

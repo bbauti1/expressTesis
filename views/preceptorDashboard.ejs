@@ -17,7 +17,9 @@
         <% cursos.forEach(curso => { %>
             <li>
                 Curso: <%= curso.anio %> - <%= curso.division %> 
-                <a href="/estudiantes/pendientes/<%= curso._id %>">Ver estudiantes pendientes</a>
+                <a href="/estudiantes/pendientes/<%= curso._id %>">Ver estudiantes pendientes</a> |
+                <a href="/estudiantes-rechazados/<%= curso._id %>">Ver estudiantes rechazados</a> |
+                <a href="/estudiantes-aceptados/<%= curso._id %>">Ver estudiantes aceptados</a>
             </li>
         <% }); %>
     </ul>

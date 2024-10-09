@@ -184,7 +184,6 @@ app.get('/verify-email', async (req, res) => {
 });
 
 const loginUser = async (dni, password) => {
-    // Buscar al usuario por DNI
     const user = await User.findOne({ dni }).exec();  
     if (!user) {
         throw new Error('Usuario no encontrado');
@@ -270,15 +269,12 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 
-// Ruta GET para manejar el redireccionamiento del preceptor según su estado
 app.get('/preceptor-dashboard', authenticateToken, async (req, res) => {
     try {
-        // Verifica que el usuario sea un preceptor
         if (req.user.role !== 'preceptor') {
             return res.status(403).send('Acceso denegado');
         }
 
-        // Busca el preceptor en la base de datos para verificar su estado
         const preceptor = await Preceptor.findById(req.user.userId);
 
         if (!preceptor) {
@@ -287,13 +283,12 @@ app.get('/preceptor-dashboard', authenticateToken, async (req, res) => {
 
         const cursosAsignados = await Curso_Preceptor.find({ fk_id_preceptor: preceptor._id }).populate('fk_id_curso');
 
-        // Redirige según el estado del preceptor
         if (preceptor.estado === 'pendiente') {
-            res.sendFile(path.join(__dirname, '/esperaDashboard.html')); // Redirige al dashboard de espera
+            res.sendFile(path.join(__dirname, '/esperaDashboard.html')); 
         } else if (preceptor.estado === 'rechazado') {
-            res.sendFile(path.join(__dirname, '/rechazadoDashboard.html')); // Redirige al dashboard de rechazo
+            res.sendFile(path.join(__dirname, '/rechazadoDashboard.html')); 
         } else if (preceptor.estado === 'aceptado') {
-            res.render('preceptorDashboard', { preceptor, cursos: cursosAsignados.map(c => c.fk_id_curso) }); // Redirige al dashboard de preceptor
+            res.render('preceptorDashboard', { preceptor, cursos: cursosAsignados.map(c => c.fk_id_curso) });
         } else if(preceptor.estado === 'dadobaja') {
             res.sendFile(path.join(__dirname, '/preceptorDadoBaja.html'));
         }else {
@@ -313,28 +308,25 @@ app.get('/profesor-dashboard', authenticateToken, (req, res) => {
 
 app.get('/estudiante-dashboard', authenticateToken, async (req, res) => {
     try {
-        // Verificar si el rol del usuario es estudiante
         if (req.user.role !== 'estudiante') {
             return res.status(403).send('Acceso denegado');
         }
 
-        // Obtener el estudiante desde la base de datos
         const estudiante = await Estudiante.findById(req.user.userId);
 
         if (!estudiante) {
             return res.status(404).send('Estudiante no encontrado');
         }
 
-        // Redirigir según el estado del estudiante
         switch (estudiante.estado) {
             case 'pendiente':
-                res.sendFile(path.join(__dirname, '/pendienteEstudiante.html')); // Página explicativa para pendientes
+                res.sendFile(path.join(__dirname, '/pendienteEstudiante.html'));
                 break;
             case 'rechazado':
-                res.sendFile(path.join(__dirname, '/rechazadoEstudiante.html')); // Página explicativa para rechazados
+                res.sendFile(path.join(__dirname, '/rechazadoEstudiante.html'));
                 break;
             case 'aceptado':
-                res.render('estudianteDashboard', { estudiante }); // Redirigir al dashboard del estudiante aceptado
+                res.render('estudianteDashboard', { estudiante });
                 break;
             default:
                 res.status(400).send('Estado del estudiante no válido');
@@ -354,7 +346,6 @@ app.get('/directivo-dashboard', authenticateToken, (req, res) => {
     res.sendFile(path.join(__dirname + '/directivoDashboard.html'));
 });
 
-// Ruta GET para mostrar preceptores con estado 'pendiente'
 app.get('/preceptores/pendientes', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'directivo') {
@@ -370,7 +361,6 @@ app.get('/preceptores/pendientes', authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta POST para aceptar un preceptor
 app.post('/preceptor/aceptar/:id', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'directivo') {
@@ -386,7 +376,6 @@ app.post('/preceptor/aceptar/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta POST para rechazar un preceptor
 app.post('/preceptor/rechazar/:id', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'directivo') {
@@ -433,14 +422,12 @@ app.post('/dar-baja-preceptor/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta GET para listar preceptores dados de baja
 app.get('/preceptores-baja', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'directivo') {
             return res.status(403).send('Acceso denegado');
         }
 
-        // Buscar preceptores en estado dado de baja
         const preceptoresBaja = await Preceptor.find({ estado: 'dadobaja' });
 
         res.render('listarPreceptoresBaja', {
@@ -453,7 +440,6 @@ app.get('/preceptores-baja', authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta POST para dar de alta a un preceptor dado de baja
 app.post('/dar-alta-preceptor/:id', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'directivo') {
@@ -462,10 +448,9 @@ app.post('/dar-alta-preceptor/:id', authenticateToken, async (req, res) => {
 
         const preceptorId = req.params.id;
 
-        // Cambiar el estado del preceptor a 'aceptado'
         await Preceptor.findByIdAndUpdate(preceptorId, { estado: 'aceptado' });
 
-        res.redirect('/preceptores-baja'); // Redirigir al listado de preceptores dados de baja
+        res.redirect('/preceptores-baja');
 
     } catch (error) {
         console.error('Error al dar de alta al preceptor:', error);
@@ -473,17 +458,14 @@ app.post('/dar-alta-preceptor/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta GET para listar preceptores rechazados
 app.get('/preceptores-rechazados', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'directivo') {
             return res.status(403).send('Acceso denegado');
         }
 
-        // Buscar preceptores en estado 'rechazado'
         const preceptoresRechazados = await Preceptor.find({ estado: 'rechazado' });
 
-        // Renderizar una vista con los preceptores rechazados
         res.render('listarPreceptoresRechazados', { preceptores: preceptoresRechazados });
 
     } catch (error) {
@@ -492,7 +474,6 @@ app.get('/preceptores-rechazados', authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta POST para aceptar un preceptor rechazado
 app.post('/aceptar-preceptor-rechazado/:id', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'directivo') {
@@ -501,10 +482,9 @@ app.post('/aceptar-preceptor-rechazado/:id', authenticateToken, async (req, res)
 
         const preceptorId = req.params.id;
 
-        // Cambiar el estado del preceptor a 'aceptado'
         await Preceptor.findByIdAndUpdate(preceptorId, { estado: 'aceptado' });
 
-        res.redirect('/preceptores-rechazados'); // Redirigir al listado de preceptores rechazados
+        res.redirect('/preceptores-rechazados');
 
     } catch (error) {
         console.error('Error al aceptar preceptor rechazado:', error);
@@ -512,7 +492,6 @@ app.post('/aceptar-preceptor-rechazado/:id', authenticateToken, async (req, res)
     }
 });
 
-// Ruta GET para listar estudiantes pendientes de un curso
 app.get('/estudiantes/pendientes/:cursoId', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'preceptor') {
@@ -527,7 +506,6 @@ app.get('/estudiantes/pendientes/:cursoId', authenticateToken, async (req, res) 
     }
 });
 
-// Ruta POST para aceptar a un estudiante
 app.post('/estudiante/aceptar/:id/:cursoId', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'preceptor') {
@@ -535,14 +513,13 @@ app.post('/estudiante/aceptar/:id/:cursoId', authenticateToken, async (req, res)
         }
 
         await Estudiante.findByIdAndUpdate(req.params.id, { estado: 'aceptado' });
-        res.redirect('/estudiantes/pendientes/' + req.params.cursoId); // Usar cursoId en lugar de cursoAsignado
+        res.redirect('/estudiantes/pendientes/' + req.params.cursoId);
     } catch (error) {
         console.error('Error al aceptar estudiante:', error);
         res.status(500).send('Error al aceptar estudiante.');
     }
 });
 
-// Ruta POST para rechazar a un estudiante
 app.post('/estudiante/rechazar/:id/:cursoId', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'preceptor') {
@@ -550,14 +527,54 @@ app.post('/estudiante/rechazar/:id/:cursoId', authenticateToken, async (req, res
         }
 
         await Estudiante.findByIdAndUpdate(req.params.id, { estado: 'rechazado' });
-        res.redirect('/estudiantes/pendientes/' + req.params.cursoId); // Usar cursoId en lugar de cursoAsignado
+        res.redirect('/estudiantes/pendientes/' + req.params.cursoId); 
     } catch (error) {
         console.error('Error al rechazar estudiante:', error);
         res.status(500).send('Error al rechazar estudiante.');
     }
 });
 
+app.get('/estudiantes-rechazados/:cursoId', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
 
+        const estudiantesRechazados = await Estudiante.find({ cursoPerteneciente: req.params.cursoId, estado: 'rechazado' });
+        res.render('listarEstudiantesRechazados', { estudiantes: estudiantesRechazados });
+    } catch (error) {
+        console.error('Error al cargar estudiantes rechazados:', error);
+        res.status(500).send('Error al cargar estudiantes rechazados.');
+    }
+});
+
+app.post('/aceptar-estudiante-rechazado/:id/:cursoId', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        await Estudiante.findByIdAndUpdate(req.params.id, { estado: 'aceptado' });
+        res.redirect('/estudiantes-rechazados/' + req.params.cursoId);
+    } catch (error) {
+        console.error('Error al aceptar estudiante rechazado:', error);
+        res.status(500).send('Error al aceptar estudiante rechazado.');
+    }
+});
+
+app.get('/estudiantes-aceptados/:cursoId', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'preceptor') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        const estudiantesAceptados = await Estudiante.find({ cursoPerteneciente: req.params.cursoId, estado: 'aceptado' });
+        res.render('listarEstudiantesAceptados', { estudiantes: estudiantesAceptados });
+    } catch (error) {
+        console.error('Error al cargar estudiantes aceptados:', error);
+        res.status(500).send('Error al cargar estudiantes aceptados.');
+    }
+});
 
 app.get('/elegir-curso', authenticateToken, async (req, res) => {
     try {
