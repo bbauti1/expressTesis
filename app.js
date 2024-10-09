@@ -576,6 +576,39 @@ app.get('/estudiantes-aceptados/:cursoId', authenticateToken, async (req, res) =
     }
 });
 
+app.get('/preceptores-cursos', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        const cursoPreceptores = await Curso_Preceptor.find()
+            .populate('fk_id_preceptor') 
+            .populate('fk_id_curso')  
+            .exec();
+
+        res.render('listarPreceptoresCursos', { cursoPreceptores });
+    } catch (error) {
+        console.error('Error al cargar preceptores y cursos:', error);
+        res.status(500).send('Error al cargar la información.');
+    }
+});
+
+app.post('/eliminar-curso-preceptor/:id', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'directivo') {
+            return res.status(403).send('Acceso denegado');
+        }
+
+        await Curso_Preceptor.findByIdAndDelete(req.params.id);
+        
+        res.redirect('/preceptores-cursos');
+    } catch (error) {
+        console.error('Error al eliminar la asignación de preceptor a curso:', error);
+        res.status(500).send('Error al eliminar la asignación.');
+    }
+});
+
 app.get('/elegir-curso', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'preceptor') {

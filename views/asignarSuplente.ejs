@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignar Suplente</title>
+</head>
+<body>
+    <h1>Asignar Suplente para <%= preceptor.nombre %> <%= preceptor.apellido %></h1>
+
+    <form action="/preceptor/asignar-suplente/<%= preceptor._id %>" method="POST">
+        <label for="suplenteId">Selecciona un suplente:</label>
+        <select name="suplenteId" id="suplenteId" required>
+            <% preceptoresDisponibles.forEach(function(suplente) { %>
+                <option value="<%= suplente._id %>">
+                    <%= suplente.nombre %> <%= suplente.apellido %> (DNI: <%= suplente.dni %>)
+                </option>
+            <% }) %>
+        </select>
+        <button type="submit">Asignar Suplente</button>
+    </form>
+
+    <a href="/directivo-dashboard">Volver al Dashboard</a>
+</body>
+</html>

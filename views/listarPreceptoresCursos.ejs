@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Preceptores y sus Cursos</title>
+</head>
+<body>
+    <h1>Preceptores a Cargo de Cursos</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>DNI</th>
+                <th>Email</th>
+                <th>Curso</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% cursoPreceptores.forEach(function(asignacion) { %>
+                <tr>
+                    <td><%= asignacion.fk_id_preceptor.nombre %></td>
+                    <td><%= asignacion.fk_id_preceptor.apellido %></td>
+                    <td><%= asignacion.fk_id_preceptor.dni %></td>
+                    <td><%= asignacion.fk_id_preceptor.email %></td>
+                    <td>Año: <%= asignacion.fk_id_curso.anio %>, División: <%= asignacion.fk_id_curso.division %></td>
+                    <td>
+                        <!-- Botón para eliminar la asignación -->
+                        <form action="/eliminar-curso-preceptor/<%= asignacion._id %>" method="POST">
+                            <button type="submit">Eliminar Asignación</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <a href="/directivo-dashboard">Volver al Dashboard</a>
+</body>
+</html>
