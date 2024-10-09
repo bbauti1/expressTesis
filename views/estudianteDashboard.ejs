@@ -6,26 +6,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="/css/style.css">
-    <title>Directivo</title>
+    <title>Estudiante</title>
 </head>
 <body>
-    <h1>Bienvenido!</h1>
-    <h2>Pudiste iniciar sesión, Directivo.</h2>
+    
+    <h1>Bienvenido, <%= estudiante.nombre %> <%= estudiante.apellido %>!</h1>
+    <p>Has sido aceptado en el curso.
 
-    <br> <a href="/comunicado"> Crear comunicado </a>
-    <br><a href="/preceptores/pendientes"> Gestionar solicitudes de posibles preceptores </a>
-    <br><a href="/preceptores-activos">Gestionar preceptores dados de alta</a>
-    <br><a href="/preceptores-baja">Gestionar preceptores dados de baja</a>
-    <br><a href="/preceptores-rechazados">Gestionar preceptores que han sido rechazados</a>
-    <br> <a href="/logout"> Cerrar sesión </a>
+    <br> <a href="/comunicados"> Ver comunicados de mi curso. </a>
+    <br> <a href="/logout"> Cerrar sesión</a>
 
     <footer>
         <div class="button-container">
-            <a href="directivo-dashboard">
+            <a href="estudiante-dashboard">
                 <button class="button material-icons">home</button>
             </a>
-            <a href="/comunicado">
-                <button class="button material-icons">drive_file_rename_outline</button>
+            <a href="/comunicados">
+                <button class="button material-icons">book</button>
             </a>
             <button class="button material-icons">person</button>
             <a href="/logout">

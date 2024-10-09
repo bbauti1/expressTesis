@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preceptores Rechazados</title>
+</head>
+<body>
+    <!-- listarPreceptoresRechazados.ejs -->
+<h1>Preceptores Rechazados</h1>
+
+<% if (preceptores.length === 0) { %>
+    <p>No hay preceptores rechazados en este momento.</p>
+<% } else { %>
+    <ul>
+        <% preceptores.forEach(preceptor => { %>
+            <li>
+                <%= preceptor.nombre %> <%= preceptor.apellido %> - <%= preceptor.dni %>  - <%= preceptor.email %>
+                <!-- Botón para aceptar el preceptor rechazado -->
+                <form action="/aceptar-preceptor-rechazado/<%= preceptor._id %>" method="POST">
+                    <button type="submit">Aceptar</button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+<% } %>
+</body>
+</html>

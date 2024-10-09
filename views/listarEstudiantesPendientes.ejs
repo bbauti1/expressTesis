@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudiantes Pendientes</title>
+</head>
+<body>
+    <!-- listarEstudiantesPendientes.ejs -->
+<h1>Estudiantes Pendientes para Aceptar</h1>
+
+<% if (estudiantes.length === 0) { %>
+    <p>No hay estudiantes pendientes en este momento.</p>
+<% } else { %>
+    <ul>
+        <% estudiantes.forEach(estudiante => { %>
+            <li>
+                <%= estudiante.apellido %> <%= estudiante.nombre %> - <%= estudiante.dni %> - <%= estudiante.email %>
+                <!-- Botón para aceptar -->
+                <form action="/estudiante/aceptar/<%= estudiante._id %>/<%= estudiante.cursoPerteneciente %>" method="POST">
+                    <button type="submit">Aceptar</button>
+                </form>
+                <!-- Botón para rechazar -->
+                <form action="/estudiante/rechazar/<%= estudiante._id %>/<%= estudiante.cursoPerteneciente %>" method="POST">
+                    <button type="submit">Rechazar</button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+<% } %>
+
+
+</body>
+</html>

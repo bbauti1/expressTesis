@@ -6,22 +6,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="/css/style.css">
-    <title>Directivo</title>
+    <title>Preceptor</title>
 </head>
 <body>
-    <h1>Bienvenido!</h1>
-    <h2>Pudiste iniciar sesión, Directivo.</h2>
-
-    <br> <a href="/comunicado"> Crear comunicado </a>
-    <br><a href="/preceptores/pendientes"> Gestionar solicitudes de posibles preceptores </a>
-    <br><a href="/preceptores-activos">Gestionar preceptores dados de alta</a>
-    <br><a href="/preceptores-baja">Gestionar preceptores dados de baja</a>
-    <br><a href="/preceptores-rechazados">Gestionar preceptores que han sido rechazados</a>
-    <br> <a href="/logout"> Cerrar sesión </a>
-
+    <h1>Bienvenido/a, <%= preceptor.nombre %>!</h1>
+    <h2>Gestiona tus cursos y estudiantes pendientes</h2>
+    
+    <h3>Tus Cursos:</h3>
+    <ul>
+        <% cursos.forEach(curso => { %>
+            <li>
+                Curso: <%= curso.anio %> - <%= curso.division %> 
+                <a href="/estudiantes/pendientes/<%= curso._id %>">Ver estudiantes pendientes</a>
+            </li>
+        <% }); %>
+    </ul>
+    <br> <a href="/comunicado"> Crear comunicado. </a>
+    <br> <a href="/elegir-curso"> Elegir curso. </a>
+    <br> <a href="/logout"> Cerrar sesión</a>
     <footer>
         <div class="button-container">
-            <a href="directivo-dashboard">
+            <a href="preceptor-dashboard">
                 <button class="button material-icons">home</button>
             </a>
             <a href="/comunicado">
