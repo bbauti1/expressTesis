@@ -5,7 +5,6 @@ const ResponsableSchema = new mongoose.Schema({
     apellido: { type: String, required: true },
     dni: { type: String, required: true, unique: true },
     telefono: { type: String, required: true },
-    dniACargo: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
 });
 

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Solicitudes Pendientes</title>
+</head>
+<body>
+    <h1>Solicitudes de Responsables</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Responsable</th>
+                <th>Estudiante</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% solicitudes.forEach(function(solicitud) { %>
+                <tr>
+                    <td><%= solicitud.fk_id_responsable.nombre %> <%= solicitud.fk_id_responsable.apellido %> (DNI: <%= solicitud.fk_id_responsable.dni %>)</td>
+                    <td>
+                        <%= solicitud.fk_id_estudiante.nombre %> <%= solicitud.fk_id_estudiante.apellido %> (DNI: <%= solicitud.fk_id_estudiante.dni %>)<br>
+                        Curso: <%= solicitud.fk_id_estudiante.cursoPerteneciente.anio %> - <%= solicitud.fk_id_estudiante.cursoPerteneciente.division %>
+                    </td>
+                    <td>
+                        <form action="/aceptar-solicitud/<%= solicitud._id %>" method="POST">
+                            <button type="submit">Aceptar</button>
+                        </form>
+                        <form action="/rechazar-solicitud/<%= solicitud._id %>" method="POST">
+                            <button type="submit">Rechazar</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</body>
+</html>

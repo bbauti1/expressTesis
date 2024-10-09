@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Dashboard Responsable</title>
+</head>
+<body>
+
+
+    <h1>Bienvenido, <%= responsable.nombre %> <%= responsable.apellido %>!</h1>
+
+    <a href="/add-student">Enviar peticion responsabilidad de Estudiante</a>
+
+    <% if (solicitudesPendientes.length > 0) { %>
+        <div class="alerta-pendiente">
+            <h3>Solicitudes en Revisión:</h3>
+            <ul>
+                <% solicitudesPendientes.forEach(function(solicitud) { %>
+                    <li>
+                        Tu solicitud para ser responsable de <%= solicitud.fk_id_estudiante.nombre %> <%= solicitud.fk_id_estudiante.apellido %> está siendo revisada.
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
+    <% } %>
+
+    <% if (solicitudesRechazadas.length > 0) { %>
+        <div class="alerta-rechazada">
+            <h3>Solicitudes Rechazadas:</h3>
+            <ul>
+                <% solicitudesRechazadas.forEach(function(solicitud) { %>
+                    <li>
+                        Tu solicitud para ser responsable de <%= solicitud.fk_id_estudiante.nombre %> <%= solicitud.fk_id_estudiante.apellido %> ha sido rechazada.
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
+    <% } %>
+
+    <% if (estudiantesACargo.length > 0) { %>
+        <div class="alumnos-a-cargo">
+            <h3>Alumnos a tu Cargo:</h3>
+            <ul>
+                <% estudiantesACargo.forEach(function(estudiante) { %>
+                    <li>
+                        <%= estudiante.nombre %> <%= estudiante.apellido %> (DNI: <%= estudiante.dni %> - Curso: <%= estudiante.cursoPerteneciente.anio %> - <%= estudiante.cursoPerteneciente.division %>)
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
+    <% } else { %>
+        <p>No tienes alumnos a tu cargo.</p>
+    <% } %>
+
+    <footer>
+        <a href="/logout">Cerrar sesión</a>
+    </footer>
+</body>
+</html>

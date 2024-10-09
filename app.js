@@ -341,8 +341,40 @@ app.get('/estudiante-dashboard', authenticateToken, async (req, res) => {
     }
 });
 
-app.get('/responsable-dashboard', authenticateToken, (req, res) => {
-    res.sendFile(path.join(__dirname + '/responsableDashboard.html'));
+app.get('/responsable-dashboard', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'responsable') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const solicitudesPendientes = await ResponsableDe.find({
+            fk_id_responsable: req.user.userId,
+            estadoSolicitud: 'pendiente'
+        }).populate('fk_id_estudiante');
+
+        const solicitudesRechazadas = await ResponsableDe.find({
+            fk_id_responsable: req.user.userId,
+            estadoSolicitud: 'rechazado'
+        }).populate('fk_id_estudiante');
+
+        const estudiantesACargo = await ResponsableDe.find({
+            fk_id_responsable: req.user.userId,
+            estadoSolicitud: 'aceptado'
+        }).populate({
+            path: 'fk_id_estudiante',
+            populate: { path: 'cursoPerteneciente' }  // Para traer la información del curso
+        });
+
+        res.render('responsableDashboard', {
+            responsable: req.user, 
+            solicitudesPendientes: solicitudesPendientes,
+            solicitudesRechazadas: solicitudesRechazadas,
+            estudiantesACargo: estudiantesACargo.map(relacion => relacion.fk_id_estudiante)
+        });
+    } catch (error) {
+        console.error('Error al cargar el dashboard del responsable:', error);
+        res.status(500).send('Error al cargar el dashboard');
+    }
 });
 
 app.get('/directivo-dashboard', authenticateToken, (req, res) => {
@@ -585,10 +617,8 @@ app.post('/dar-baja-estudiante/:id/:cursoId', authenticateToken, async (req, res
             return res.status(403).send('Acceso denegado');
         }
 
-        // Cambiar el estado del estudiante a 'dadobaja'
         await Estudiante.findByIdAndUpdate(req.params.id, { estado: 'dadobaja' });
 
-        // Redirigir de nuevo a la lista de estudiantes aceptados
         res.redirect(`/estudiantes-aceptados/${req.params.cursoId}`);
     } catch (error) {
         console.error('Error al dar de baja al estudiante:', error);
@@ -602,7 +632,6 @@ app.get('/estudiantes-baja/:cursoId', authenticateToken, async (req, res) => {
             return res.status(403).send('Acceso denegado');
         }
 
-        // Buscar los estudiantes dados de baja para un curso específico
         const estudiantesBaja = await Estudiante.find({ cursoPerteneciente: req.params.cursoId, estado: 'dadobaja' });
         res.render('listarEstudiantesBaja', { estudiantes: estudiantesBaja });
     } catch (error) {
@@ -617,18 +646,14 @@ app.post('/dar-alta-estudiante/:id/:cursoId', authenticateToken, async (req, res
             return res.status(403).send('Acceso denegado');
         }
 
-        // Cambiar el estado del estudiante a 'aceptado'
         await Estudiante.findByIdAndUpdate(req.params.id, { estado: 'aceptado' });
 
-        // Redirigir a la lista de estudiantes dados de baja
         res.redirect(`/estudiantes-baja/${req.params.cursoId}`);
     } catch (error) {
         console.error('Error al dar de alta al estudiante:', error);
         res.status(500).send('Error al dar de alta al estudiante.');
     }
 });
-
-
 
 app.get('/preceptores-cursos', authenticateToken, async (req, res) => {
     try {
@@ -662,6 +687,118 @@ app.post('/eliminar-curso-preceptor/:id', authenticateToken, async (req, res) =>
         res.status(500).send('Error al eliminar la asignación.');
     }
 });
+
+app.get('/add-student', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'responsable') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const cursos = await Curso.find();  // Obtener los cursos de la base de datos
+        res.render('addStudent', { cursos });  // Pasar los cursos a la vista
+    } catch (error) {
+        console.error('Error al obtener cursos:', error);
+        res.status(500).send('Error al cargar el formulario.');
+    }
+});
+
+app.post('/add-student', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'responsable') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    const { dni, nombre, apellido, email, curso } = req.body;
+
+    try {
+        // Verificar si el estudiante ya existe
+        const estudianteExistente = await Estudiante.findOne({ dni, nombre, apellido, email, cursoPerteneciente: curso });
+        
+        if (!estudianteExistente) {
+            return res.status(404).send('Estudiante no encontrado');
+        }
+
+        // Verificar si ya está a cargo del responsable
+        const relacionExistente = await ResponsableDe.findOne({
+            fk_id_estudiante: estudianteExistente._id,
+            fk_id_responsable: req.user.userId
+        });
+
+        if (relacionExistente) {
+            return res.status(400).send('El estudiante ya está a tu cargo o en proceso de solicitud');
+        }
+
+        // Crear la solicitud de relación con estado 'pendiente'
+        const nuevaSolicitud = new ResponsableDe({
+            fk_id_estudiante: estudianteExistente._id,
+            fk_id_responsable: req.user.userId,
+            estadoSolicitud: 'pendiente'
+        });
+        await nuevaSolicitud.save();
+
+        // Aquí se debería enviar una notificación o redirigir al responsable a una pantalla de espera
+        res.send('Solicitud enviada al preceptor para aprobación.');
+    } catch (error) {
+        console.error('Error al enviar solicitud:', error);
+        res.status(500).send('Error al enviar la solicitud');
+    }
+});
+
+app.get('/solicitudes-preceptor/:cursoId', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const solicitudesPendientes = await ResponsableDe.find({ estadoSolicitud: 'pendiente' })
+            .populate({
+                path: 'fk_id_estudiante',
+                populate: { path: 'cursoPerteneciente' } // Popula la referencia al curso
+            })
+            .populate('fk_id_responsable');
+
+        const filteredSolicitudes = solicitudesPendientes.filter(solicitud => solicitud.fk_id_estudiante !== null);
+
+        res.render('solicitudesPreceptor', { solicitudes: filteredSolicitudes });
+    } catch (error) {
+        console.error('Error al obtener solicitudes:', error);
+        res.status(500).send('Error al cargar las solicitudes pendientes.');
+    }
+});
+
+
+// Aceptar solicitud
+app.post('/aceptar-solicitud/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const solicitud = await ResponsableDe.findById(req.params.id).populate('fk_id_estudiante');
+        await ResponsableDe.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'aceptado' });
+        res.redirect(`/solicitudes-preceptor/${solicitud.fk_id_estudiante.cursoPerteneciente}`);
+    } catch (error) {
+        console.error('Error al aceptar solicitud:', error);
+        res.status(500).send('Error al aceptar la solicitud.');
+    }
+});
+
+// Rechazar solicitud
+app.post('/rechazar-solicitud/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        // Encontrar la solicitud para obtener el curso relacionado
+        const solicitud = await ResponsableDe.findById(req.params.id).populate('fk_id_estudiante');
+        await ResponsableDe.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'rechazado' });
+        res.redirect(`/solicitudes-preceptor/${solicitud.fk_id_estudiante.cursoPerteneciente}`);
+    } catch (error) {
+        console.error('Error al rechazar solicitud:', error);
+        res.status(500).send('Error al rechazar la solicitud.');
+    }
+});
+
 
 app.get('/elegir-curso', authenticateToken, async (req, res) => {
     try {
@@ -817,13 +954,11 @@ app.get('/comunicados-preceptor', authenticateToken, async (req, res) => {
             return res.status(403).send('Acceso denegado');
         }
 
-        // Obtener los cursos asignados al preceptor
         const cursosAsignados = await Curso_Preceptor.find({ fk_id_preceptor: req.user.userId }).populate('fk_id_curso').exec();
 
-        // Obtener los comunicados enviados por el preceptor, filtrados por curso si se ha especificado uno
         const filtroCurso = req.query.cursoId ? { curso: req.query.cursoId } : {};
         const comunicados = await Comunicado.find({
-            fk_id_preceptor: req.user.userId,  // Comunicados enviados por el preceptor
+            fk_id_preceptor: req.user.userId, 
             ...filtroCurso
         }).populate('curso').exec();
 
