@@ -6,7 +6,6 @@
     <title>Estudiantes Pendientes</title>
 </head>
 <body>
-    <!-- listarEstudiantesPendientes.ejs -->
 <h1>Estudiantes Pendientes para Aceptar</h1>
 
 <% if (estudiantes.length === 0) { %>
@@ -16,11 +15,9 @@
         <% estudiantes.forEach(estudiante => { %>
             <li>
                 <%= estudiante.apellido %> <%= estudiante.nombre %> - <%= estudiante.dni %> - <%= estudiante.email %>
-                <!-- Botón para aceptar -->
                 <form action="/estudiante/aceptar/<%= estudiante._id %>/<%= estudiante.cursoPerteneciente %>" method="POST">
                     <button type="submit">Aceptar</button>
                 </form>
-                <!-- Botón para rechazar -->
                 <form action="/estudiante/rechazar/<%= estudiante._id %>/<%= estudiante.cursoPerteneciente %>" method="POST">
                     <button type="submit">Rechazar</button>
                 </form>

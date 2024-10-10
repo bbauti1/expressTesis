@@ -15,7 +15,6 @@
             <% estudiantes.forEach(estudiante => { %>
                 <li>
                     <%= estudiante.apellido %> <%= estudiante.nombre %> - <%= estudiante.dni %> - <%= estudiante.email %>
-                    <!-- Botón para aceptar -->
                     <form action="/aceptar-estudiante-rechazado/<%= estudiante._id %>/<%= estudiante.cursoPerteneciente %>" method="POST">
                         <button type="submit">Aceptar</button>
                     </form>

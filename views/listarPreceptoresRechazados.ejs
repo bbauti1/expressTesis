@@ -6,7 +6,6 @@
     <title>Preceptores Rechazados</title>
 </head>
 <body>
-    <!-- listarPreceptoresRechazados.ejs -->
 <h1>Preceptores Rechazados</h1>
 
 <% if (preceptores.length === 0) { %>
@@ -16,7 +15,6 @@
         <% preceptores.forEach(preceptor => { %>
             <li>
                 <%= preceptor.nombre %> <%= preceptor.apellido %> - <%= preceptor.dni %>  - <%= preceptor.email %>
-                <!-- Botón para aceptar el preceptor rechazado -->
                 <form action="/aceptar-preceptor-rechazado/<%= preceptor._id %>" method="POST">
                     <button type="submit">Aceptar</button>
                 </form>

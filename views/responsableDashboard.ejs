@@ -46,6 +46,8 @@
                 <% estudiantesACargo.forEach(function(estudiante) { %>
                     <li>
                         <%= estudiante.nombre %> <%= estudiante.apellido %> (DNI: <%= estudiante.dni %> - Curso: <%= estudiante.cursoPerteneciente.anio %> - <%= estudiante.cursoPerteneciente.division %>)
+                        <br>
+                    <a href="/comunicados-curso/<%= estudiante.cursoPerteneciente._id %>">Ver comunicados del curso</a>
                     </li>
                 <% }) %>
             </ul>

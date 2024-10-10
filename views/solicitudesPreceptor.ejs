@@ -19,7 +19,7 @@
         <tbody>
             <% solicitudes.forEach(function(solicitud) { %>
                 <tr>
-                    <td><%= solicitud.fk_id_responsable.nombre %> <%= solicitud.fk_id_responsable.apellido %> (DNI: <%= solicitud.fk_id_responsable.dni %>)</td>
+                    <td><%= solicitud.fk_id_responsable.nombre %> <%= solicitud.fk_id_responsable.apellido %> <%= solicitud.fk_id_responsable.email %> (DNI: <%= solicitud.fk_id_responsable.dni %>)</td>
                     <td>
                         <%= solicitud.fk_id_estudiante.nombre %> <%= solicitud.fk_id_estudiante.apellido %> (DNI: <%= solicitud.fk_id_estudiante.dni %>)<br>
                         Curso: <%= solicitud.fk_id_estudiante.cursoPerteneciente.anio %> - <%= solicitud.fk_id_estudiante.cursoPerteneciente.division %>

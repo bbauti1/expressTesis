@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Comunicados del Curso</title>
+</head>
+<body>
+    <h1>Comunicados del Curso <%= curso.anio %> - <%= curso.division %></h1>
+
+    <% if (comunicadosCurso.length > 0) { %>
+        <h2>Comunicados Específicos del Curso</h2>
+        <ul>
+            <% comunicadosCurso.forEach(function(comunicado) { %>
+                <li>
+                    <h3><%= comunicado.titulo %></h3>
+                    <p><%= comunicado.info %></p>
+                    <p><strong>Fecha de creación:</strong> <%= comunicado.createdAt.toLocaleDateString() %></p>
+                    <% if (comunicado.fk_id_preceptor) { %>
+                        <p><strong>Creado por:</strong> Preceptor</p>
+                    <% } else if (comunicado.fk_id_directivo) { %>
+                        <p><strong>Creado por:</strong> Directivo</p>
+                    <% } %>
+                    <hr>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <p>No hay comunicados específicos para este curso.</p>
+    <% } %>
+
+    <% if (comunicadosGenerales.length > 0) { %>
+        <h2>Comunicados Generales</h2>
+        <ul>
+            <% comunicadosGenerales.forEach(function(comunicado) { %>
+                <li>
+                    <h3><%= comunicado.titulo %></h3>
+                    <p><%= comunicado.info %></p>
+                    <p><strong>Fecha de creación:</strong> <%= comunicado.createdAt.toLocaleDateString() %></p>
+                    <% if (comunicado.fk_id_preceptor) { %>
+                        <p><strong>Creado por:</strong> Preceptor</p>
+                    <% } else if (comunicado.fk_id_directivo) { %>
+                        <p><strong>Creado por:</strong> Directivo</p>
+                    <% } %>
+                    <hr>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <p>No hay comunicados generales disponibles.</p>
+    <% } %>
+
+    <a href="/responsable-dashboard">Volver al Dashboard</a>
+</body>
+</html>

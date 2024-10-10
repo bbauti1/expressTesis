@@ -301,7 +301,6 @@ app.get('/preceptor-dashboard', authenticateToken, async (req, res) => {
     }
 });
 
-
 app.get('/profesor-dashboard', authenticateToken, (req, res) => {
     res.sendFile(path.join(__dirname + '/profesorDashboard.html'));
 });
@@ -694,8 +693,8 @@ app.get('/add-student', authenticateToken, async (req, res) => {
     }
 
     try {
-        const cursos = await Curso.find();  // Obtener los cursos de la base de datos
-        res.render('addStudent', { cursos });  // Pasar los cursos a la vista
+        const cursos = await Curso.find(); 
+        res.render('addStudent', { cursos });  
     } catch (error) {
         console.error('Error al obtener cursos:', error);
         res.status(500).send('Error al cargar el formulario.');
@@ -710,14 +709,12 @@ app.post('/add-student', authenticateToken, async (req, res) => {
     const { dni, nombre, apellido, email, curso } = req.body;
 
     try {
-        // Verificar si el estudiante ya existe
         const estudianteExistente = await Estudiante.findOne({ dni, nombre, apellido, email, cursoPerteneciente: curso });
         
         if (!estudianteExistente) {
             return res.status(404).send('Estudiante no encontrado');
         }
 
-        // Verificar si ya está a cargo del responsable
         const relacionExistente = await ResponsableDe.findOne({
             fk_id_estudiante: estudianteExistente._id,
             fk_id_responsable: req.user.userId
@@ -727,7 +724,6 @@ app.post('/add-student', authenticateToken, async (req, res) => {
             return res.status(400).send('El estudiante ya está a tu cargo o en proceso de solicitud');
         }
 
-        // Crear la solicitud de relación con estado 'pendiente'
         const nuevaSolicitud = new ResponsableDe({
             fk_id_estudiante: estudianteExistente._id,
             fk_id_responsable: req.user.userId,
@@ -735,7 +731,6 @@ app.post('/add-student', authenticateToken, async (req, res) => {
         });
         await nuevaSolicitud.save();
 
-        // Aquí se debería enviar una notificación o redirigir al responsable a una pantalla de espera
         res.send('Solicitud enviada al preceptor para aprobación.');
     } catch (error) {
         console.error('Error al enviar solicitud:', error);
@@ -752,6 +747,7 @@ app.get('/solicitudes-preceptor/:cursoId', authenticateToken, async (req, res) =
         const solicitudesPendientes = await ResponsableDe.find({ estadoSolicitud: 'pendiente' })
             .populate({
                 path: 'fk_id_estudiante',
+                match: { cursoPerteneciente: req.params.cursoId },
                 populate: { path: 'cursoPerteneciente' } // Popula la referencia al curso
             })
             .populate('fk_id_responsable');
@@ -765,8 +761,29 @@ app.get('/solicitudes-preceptor/:cursoId', authenticateToken, async (req, res) =
     }
 });
 
+app.get('/comunicados-curso/:cursoId', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'responsable') {
+        return res.status(403).send('Acceso denegado');
+    }
 
-// Aceptar solicitud
+    try {
+        const comunicadosCurso = await Comunicado.find({ curso: req.params.cursoId })
+            .populate('fk_id_preceptor')
+            .populate('fk_id_directivo');
+
+        const comunicadosGenerales = await Comunicado.find({ general: true })
+            .populate('fk_id_preceptor')
+            .populate('fk_id_directivo');
+
+        const curso = await Curso.findById(req.params.cursoId);
+
+        res.render('comunicadosCurso', { comunicadosCurso, comunicadosGenerales, curso });
+    } catch (error) {
+        console.error('Error al obtener comunicados del curso:', error);
+        res.status(500).send('Error al obtener los comunicados.');
+    }
+});
+
 app.post('/aceptar-solicitud/:id', authenticateToken, async (req, res) => {
     if (req.user.role !== 'preceptor') {
         return res.status(403).send('Acceso denegado');
@@ -782,14 +799,12 @@ app.post('/aceptar-solicitud/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Rechazar solicitud
 app.post('/rechazar-solicitud/:id', authenticateToken, async (req, res) => {
     if (req.user.role !== 'preceptor') {
         return res.status(403).send('Acceso denegado');
     }
 
     try {
-        // Encontrar la solicitud para obtener el curso relacionado
         const solicitud = await ResponsableDe.findById(req.params.id).populate('fk_id_estudiante');
         await ResponsableDe.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'rechazado' });
         res.redirect(`/solicitudes-preceptor/${solicitud.fk_id_estudiante.cursoPerteneciente}`);
@@ -798,7 +813,6 @@ app.post('/rechazar-solicitud/:id', authenticateToken, async (req, res) => {
         res.status(500).send('Error al rechazar la solicitud.');
     }
 });
-
 
 app.get('/elegir-curso', authenticateToken, async (req, res) => {
     try {
