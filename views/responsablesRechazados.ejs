@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsables Rechazados</title>
+</head>
+<body>
+    <h1>Responsables Rechazados</h1>
+    <ul>
+        <% responsablesRechazados.forEach(function(responsable) { %>
+            <% if (responsable.fk_id_estudiante) { %>
+                <li>
+                    <%= responsable.fk_id_responsable.nombre %> <%= responsable.fk_id_responsable.apellido %> - 
+                    <form action="/aceptar-rechazado/<%= responsable._id %>?cursoId=<%= responsable.fk_id_estudiante.cursoPerteneciente._id %>" method="POST" style="display:inline;">
+                        <button type="submit">Aceptar</button>
+                    </form>
+                </li>
+            <% } %>
+        <% }) %>
+    </ul>
+    <a href="/preceptor-dashboard">Volver al dashboard</a>
+    
+</body>
+</html>

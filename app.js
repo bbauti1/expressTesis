@@ -126,7 +126,7 @@ app.post('/register', async (req, res) => {
                 newUser = new Responsable({ ...data, dni });
                 break;
             case 'directivo':
-                newUser = new Directivo({ ...data, dni });
+                newUser = new Directivo({ ...data, dni , estadoSolicitud: 'pendiente'});
                 break;
             default:
                 return res.status(400).send('Rol no reconocido');
@@ -210,6 +210,8 @@ const loginUser = async (dni, password) => {
         case 'directivo':
             roleModel = Directivo;
             break;
+        case 'admin':
+            return { role: 'admin' };
         default:
             throw new Error('Rol no encontrado');
     }
@@ -254,6 +256,9 @@ app.post('/login', async (req, res) => {
                 break;
             case 'directivo':
                 res.redirect('/directivo-dashboard');
+                break;
+            case 'admin':  // Redirige al dashboard de admin
+                res.redirect('/admin-dashboard');
                 break;
             default:
                 res.status(400).send('Rol no reconocido');
@@ -361,14 +366,23 @@ app.get('/responsable-dashboard', authenticateToken, async (req, res) => {
             estadoSolicitud: 'aceptado'
         }).populate({
             path: 'fk_id_estudiante',
-            populate: { path: 'cursoPerteneciente' }  // Para traer la información del curso
+            populate: { path: 'cursoPerteneciente' }
+        });
+
+        const solicitudesDadoBaja = await ResponsableDe.find({
+            fk_id_responsable: req.user.userId,
+            estadoSolicitud: 'dadobaja'
+        }).populate({
+            path: 'fk_id_estudiante',
+            populate: { path: 'cursoPerteneciente' }
         });
 
         res.render('responsableDashboard', {
             responsable: req.user, 
             solicitudesPendientes: solicitudesPendientes,
             solicitudesRechazadas: solicitudesRechazadas,
-            estudiantesACargo: estudiantesACargo.map(relacion => relacion.fk_id_estudiante)
+            estudiantesACargo: estudiantesACargo.map(relacion => relacion.fk_id_estudiante),
+            solicitudesDadoBaja: solicitudesDadoBaja.map(relacion => relacion.fk_id_estudiante)
         });
     } catch (error) {
         console.error('Error al cargar el dashboard del responsable:', error);
@@ -376,8 +390,32 @@ app.get('/responsable-dashboard', authenticateToken, async (req, res) => {
     }
 });
 
-app.get('/directivo-dashboard', authenticateToken, (req, res) => {
-    res.sendFile(path.join(__dirname + '/directivoDashboard.html'));
+app.get('/directivo-dashboard', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'directivo') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        // Encontrar el directivo en la base de datos usando su id
+        const directivo = await Directivo.findById(req.user.userId);
+
+        // Redirigir a diferentes dashboards según el estado de la solicitud
+        switch (directivo.estadoSolicitud) {
+            case 'pendiente':
+                return res.render('directivoPendiente', { directivo });
+            case 'rechazado':
+                return res.render('directivoRechazado', { directivo });
+            case 'dadobaja':
+                return res.render('directivoDadoBaja', { directivo });
+            case 'aceptado':
+                return res.sendFile(path.join(__dirname + '/directivoDashboard.html'));
+            default:
+                return res.status(400).send('Estado de solicitud no válido');
+        }
+    } catch (error) {
+        console.error('Error al cargar el dashboard del directivo:', error);
+        res.status(500).send('Error al cargar el dashboard del directivo');
+    }
 });
 
 app.get('/preceptores/pendientes', authenticateToken, async (req, res) => {
@@ -813,6 +851,245 @@ app.post('/rechazar-solicitud/:id', authenticateToken, async (req, res) => {
         res.status(500).send('Error al rechazar la solicitud.');
     }
 });
+
+app.get('/responsables-rechazados/:cursoId', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const responsablesRechazados = await ResponsableDe.find({ estadoSolicitud: 'rechazado' })
+            .populate({
+                path: 'fk_id_estudiante',
+                match: { cursoPerteneciente: req.params.cursoId }
+            })
+            .populate('fk_id_responsable');
+
+        res.render('responsablesRechazados', { responsablesRechazados });
+    } catch (error) {
+        console.error('Error al cargar responsables rechazados:', error);
+        res.status(500).send('Error al cargar responsables rechazados.');
+    }
+});
+
+app.post('/aceptar-rechazado/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    const cursoId = req.query.cursoId;
+
+    try {
+        await ResponsableDe.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'aceptado' });
+        res.redirect(`/responsables-rechazados/${cursoId}`);
+    } catch (error) {
+        console.error('Error al aceptar responsable rechazado:', error);
+        res.status(500).send('Error al aceptar responsable rechazado.');
+    }
+});
+
+app.get('/responsables-aceptados/:cursoId', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const responsablesAceptados = await ResponsableDe.find({ estadoSolicitud: 'aceptado' })
+            .populate({
+                path: 'fk_id_estudiante',
+                match: { cursoPerteneciente: req.params.cursoId }
+            })
+            .populate('fk_id_responsable');
+
+        res.render('responsablesAceptados', { responsablesAceptados });
+    } catch (error) {
+        console.error('Error al cargar responsables aceptados:', error);
+        res.status(500).send('Error al cargar responsables aceptados.');
+    }
+});
+
+app.post('/dar-baja-responsable/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    const cursoId = req.query.cursoId;
+
+    try {
+        await ResponsableDe.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'dadobaja' });
+        res.redirect(`/responsables-aceptados/${cursoId}`);
+    } catch (error) {
+        console.error('Error al dar de baja al responsable:', error);
+        res.status(500).send('Error al dar de baja al responsable.');
+    }
+});
+
+app.get('/responsables-baja/:cursoId', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const responsablesBaja = await ResponsableDe.find({ estadoSolicitud: 'dadobaja' })
+            .populate({
+                path: 'fk_id_estudiante',
+                match: { cursoPerteneciente: req.params.cursoId }
+            })
+            .populate('fk_id_responsable');
+
+        res.render('responsablesBaja', { responsablesBaja });
+    } catch (error) {
+        console.error('Error al cargar responsables dados de baja:', error);
+        res.status(500).send('Error al cargar responsables dados de baja.');
+    }
+});
+
+app.post('/aceptar-baja/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'preceptor') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    const cursoId = req.query.cursoId;  // Asegúrate de que el cursoId esté disponible en la query
+
+    try {
+        await ResponsableDe.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'aceptado' });
+        res.redirect(`/responsables-baja/${cursoId}`);
+    } catch (error) {
+        console.error('Error al aceptar responsable dado de baja:', error);
+        res.status(500).send('Error al aceptar responsable dado de baja.');
+    }
+});
+
+app.get('/admin-dashboard', authenticateToken, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    res.render('adminDashboard', { admin: req.user });
+});
+
+app.get('/gestionar-usuarios', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const usuarios = await User.find();  // Obtiene todos los usuarios
+        res.render('gestionarUsuarios', { usuarios });
+    } catch (error) {
+        console.error('Error al obtener los usuarios:', error);
+        res.status(500).send('Error al cargar los usuarios.');
+    }
+});
+
+async function createAdmin() {
+    const hashedPassword = await bcrypt.hash('This_is_Roberto_Arlt', 10);
+    const adminUser = new User({
+        dni: '00000',
+        email: 'admin@admin.com',
+        password: hashedPassword,
+        role: 'admin',
+        isVerified: true
+    });
+
+    await adminUser.save();
+    console.log('Usuario admin creado');
+}
+
+app.get('/solicitudes-directivos', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        const directivosPendientes = await Directivo.find({ estadoSolicitud: 'pendiente' });
+        const directivosAceptados = await Directivo.find({ estadoSolicitud: 'aceptado' });
+        const directivosRechazados = await Directivo.find({ estadoSolicitud: 'rechazado' });
+        const directivosDadoBaja = await Directivo.find({ estadoSolicitud: 'dadobaja' });
+
+        res.render('solicitudesDirectivos', {
+            directivosPendientes,
+            directivosAceptados,
+            directivosRechazados,
+            directivosDadoBaja
+        });
+    } catch (error) {
+        console.error('Error al obtener solicitudes:', error);
+        res.status(500).send('Error al obtener solicitudes.');
+    }
+});
+
+app.post('/aceptar-directivo/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        await Directivo.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'aceptado' });
+        res.redirect('/solicitudes-directivos');
+    } catch (error) {
+        console.error('Error al aceptar directivo:', error);
+        res.status(500).send('Error al aceptar directivo.');
+    }
+});
+
+app.post('/rechazar-directivo/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        await Directivo.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'rechazado' });
+        res.redirect('/solicitudes-directivos');
+    } catch (error) {
+        console.error('Error al rechazar directivo:', error);
+        res.status(500).send('Error al rechazar directivo.');
+    }
+});
+
+app.post('/dar-baja-directivo/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        await Directivo.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'dadobaja' });
+        res.redirect('/solicitudes-directivos');
+    } catch (error) {
+        console.error('Error al dar de baja al directivo:', error);
+        res.status(500).send('Error al dar de baja al directivo.');
+    }
+});
+
+app.post('/aceptar-rechazado-directivo/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        await Directivo.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'aceptado' });
+        res.redirect('/solicitudes-directivos');
+    } catch (error) {
+        console.error('Error al aceptar directivo rechazado:', error);
+        res.status(500).send('Error al aceptar directivo rechazado.');
+    }
+});
+
+app.post('/aceptar-baja-directivo/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send('Acceso denegado');
+    }
+
+    try {
+        await Directivo.findByIdAndUpdate(req.params.id, { estadoSolicitud: 'aceptado' });
+        res.redirect('/solicitudes-directivos');
+    } catch (error) {
+        console.error('Error al aceptar directivo dado de baja:', error);
+        res.status(500).send('Error al aceptar directivo dado de baja.');
+    }
+});
+
+
 
 app.get('/elegir-curso', authenticateToken, async (req, res) => {
     try {

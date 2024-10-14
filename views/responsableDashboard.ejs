@@ -56,6 +56,19 @@
         <p>No tienes alumnos a tu cargo.</p>
     <% } %>
 
+    <% if (solicitudesDadoBaja.length > 0) { %>
+        <div class="alerta-baja">
+            <h3>Estudiantes que ya no están a tu cargo:</h3>
+            <ul>
+                <% solicitudesDadoBaja.forEach(function(estudiante) { %>
+                    <li>
+                        Ya no eres responsable de <%= estudiante.nombre %> <%= estudiante.apellido %> (DNI: <%= estudiante.dni %> - Curso: <%= estudiante.cursoPerteneciente.anio %> - <%= estudiante.cursoPerteneciente.division %>)
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
+    <% } %>
+
     <footer>
         <a href="/logout">Cerrar sesión</a>
     </footer>

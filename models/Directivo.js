@@ -6,6 +6,7 @@ const directivoSchema = new mongoose.Schema({
     apellido: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    estadoSolicitud: { type: String, enum: ['pendiente', 'aceptado', 'rechazado', 'dadobaja'], default: 'pendiente' } // Agregado estadoSolicitud
 });
 
 module.exports = mongoose.model('Directivo', directivoSchema);

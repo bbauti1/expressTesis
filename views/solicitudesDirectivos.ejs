@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Solicitudes de Directivos</title>
+</head>
+<body>
+    <h1>Solicitudes de Directivos Pendientes</h1>
+
+    <h2>Pendientes</h2>
+    <ul>
+        <% directivosPendientes.forEach(function(directivo) { %>
+            <li>
+                <%= directivo.nombre %> <%= directivo.apellido %> (DNI: <%= directivo.dni %>)
+                <form action="/aceptar-directivo/<%= directivo._id %>" method="POST" style="display:inline;">
+                    <button type="submit">Aceptar</button>
+                </form>
+                <form action="/rechazar-directivo/<%= directivo._id %>" method="POST" style="display:inline;">
+                    <button type="submit">Rechazar</button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+
+    <h2>Aceptados</h2>
+    <ul>
+        <% directivosAceptados.forEach(function(directivo) { %>
+            <li>
+                <%= directivo.nombre %> <%= directivo.apellido %> (DNI: <%= directivo.dni %>)
+                <form action="/dar-baja-directivo/<%= directivo._id %>" method="POST" style="display:inline;">
+                    <button type="submit">Dar de Baja</button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+
+    <h2>Rechazados</h2>
+    <ul>
+        <% directivosRechazados.forEach(function(directivo) { %>
+            <li>
+                <%= directivo.nombre %> <%= directivo.apellido %> (DNI: <%= directivo.dni %>)
+                <form action="/aceptar-rechazado-directivo/<%= directivo._id %>" method="POST" style="display:inline;">
+                    <button type="submit">Aceptar</button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+
+    <h2>Dado de Baja</h2>
+    <ul>
+        <% directivosDadoBaja.forEach(function(directivo) { %>
+            <li>
+                <%= directivo.nombre %> <%= directivo.apellido %> (DNI: <%= directivo.dni %>)
+                <form action="/aceptar-baja-directivo/<%= directivo._id %>" method="POST" style="display:inline;">
+                    <button type="submit">Aceptar</button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+
+    <a href="/admin-dashboard">Volver al Dashboard</a>
+</body>
+</html>

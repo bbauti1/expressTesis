@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsables Aceptados</title>
+</head>
+<body>
+
+    <h1>Responsables Aceptados</h1>
+<ul>
+    <% responsablesAceptados.forEach(function(responsable) { %>
+        <% if (responsable.fk_id_estudiante) { %>
+            <li>
+                <%= responsable.fk_id_responsable.nombre %> <%= responsable.fk_id_responsable.apellido %> - 
+                <form action="/dar-baja-responsable/<%= responsable._id %>?cursoId=<%= responsable.fk_id_estudiante.cursoPerteneciente._id %>" method="POST" style="display:inline;">
+                    <button type="submit">Dar de Baja</button>
+                </form>
+            </li>
+        <% } %>
+    <% }) %>
+</ul>
+</body>
+</html>
