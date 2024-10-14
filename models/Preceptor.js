@@ -5,7 +5,8 @@ const PreceptorSchema = new mongoose.Schema({
     apellido: { type: String, required: true },
     dni: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    estado: { type: String, enum: ['pendiente', 'aceptado', 'rechazado', 'dadobaja'], default: 'pendiente' }
+    estado: { type: String, enum: ['pendiente', 'aceptado', 'rechazado', 'dadobaja'], default: 'pendiente' },
+    fotoPerfil: { type: String, default: '/images/defaultProfile.png' },
 });
 
 module.exports = mongoose.model('Preceptor', PreceptorSchema);

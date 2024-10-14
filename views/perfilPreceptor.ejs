@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>Perfil Preceptor</title>
+</head>
+<body>
+    <h1>Perfil del Preceptor</h1>
+    <img src="<%= preceptor.fotoPerfil %>" alt="Foto de perfil" width="150" height="150">
+    <form action="/upload-profile-picture" method="POST" enctype="multipart/form-data">
+        <label for="fotoPerfil">Subir nueva foto de perfil:</label>
+        <input type="file" name="fotoPerfil" id="fotoPerfil">
+        <button type="submit">Actualizar foto</button>
+    </form>
+    <p>Nombre: <%= preceptor.nombre %></p>
+    <p>Apellido: <%= preceptor.apellido %></p>
+    <p>DNI: <%= preceptor.dni %></p>
+    <p>Email: <%= preceptor.email %></p>
+    <a href="/logout">Cerrar sesión</a>
+</body>
+</html>

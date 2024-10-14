@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const path = require("path");
 const cookieParser = require('cookie-parser');
 const sendVerificationEmail = require('./mailService');
+const multer = require('multer');
 
 const User = require('./models/User');
 const connectDB = require('./db');
@@ -28,6 +29,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use('/uploads', express.static('public/uploads'));
 
 router.get('/register/preceptor', async (req, res) => {
     try {
@@ -38,6 +40,17 @@ router.get('/register/preceptor', async (req, res) => {
         res.status(500).send('Error al cargar el formulario.');
     }
 });
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './public/uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+});
+
+const upload = multer({ storage: storage });
 
 const authenticateToken = (req, res, next) => {
     const token = req.cookies.token;
@@ -50,6 +63,7 @@ const authenticateToken = (req, res, next) => {
             return res.redirect('/login');
         }
         req.user = user;
+        console.log(req.user)
         next();
     });
 };
@@ -184,7 +198,10 @@ app.get('/verify-email', async (req, res) => {
 });
 
 const loginUser = async (dni, password) => {
-    const user = await User.findOne({ dni }).exec();  
+    console.log("Buscando usuario con dni:", dni);
+    const user = await User.findOne({ dni }).exec();
+    console.log("Usuario encontrado:", user);
+    console.log(user);   
     if (!user) {
         throw new Error('Usuario no encontrado');
     }
@@ -315,7 +332,7 @@ app.get('/estudiante-dashboard', authenticateToken, async (req, res) => {
         if (req.user.role !== 'estudiante') {
             return res.status(403).send('Acceso denegado');
         }
-
+        
         const estudiante = await Estudiante.findById(req.user.userId);
 
         if (!estudiante) {
@@ -1279,6 +1296,89 @@ app.get('/api/comunicados-data', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error al obtener comunicados:', error);
         res.status(400).send('Error al obtener comunicados');
+    }
+});
+
+app.get('/perfil', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId; 
+        console.log('Consultando el usuario con el ID:', userId);
+
+        let userRoleData;
+
+        switch (req.user.role) {
+            case 'estudiante':
+                userRoleData = await Estudiante.findById(userId).populate('cursoPerteneciente').exec();
+                if (!userRoleData) {
+                    return res.status(404).send('Estudiante no encontrado');
+                }
+                console.log('Datos del estudiante:', userRoleData);
+                res.render('perfilEstudiante', { user: req.user, estudiante: userRoleData });
+                break;
+            
+            case 'preceptor':
+                userRoleData = await Preceptor.findById(userId).exec();
+                if (!userRoleData) {
+                    return res.status(404).send('Preceptor no encontrado');
+                }
+                console.log('Datos del preceptor:', userRoleData);
+                res.render('perfilPreceptor', { user: req.user, preceptor: userRoleData });
+                break;
+
+            case 'responsable':
+                userRoleData = await Responsable.findById(userId).exec();
+                if (!userRoleData) {
+                    return res.status(404).send('Responsable no encontrado');
+                }
+                console.log('Datos del responsable:', userRoleData);
+                res.render('perfilResponsable', { user: req.user, responsable: userRoleData });
+                break;
+
+            case 'directivo':
+                userRoleData = await Directivo.findById(userId).exec();
+                if (!userRoleData) {
+                    return res.status(404).send('Directivo no encontrado');
+                }
+                console.log('Datos del directivo:', userRoleData);
+                res.render('perfilDirectivo', { user: req.user, directivo: userRoleData });
+                break;
+
+            default:
+                return res.status(400).send('Rol no reconocido');
+        }
+
+    } catch (error) {
+        console.error('Error al cargar el perfil:', error);
+        res.status(500).send('Error al cargar el perfil');
+    }
+});
+
+app.post('/upload-profile-picture', authenticateToken, upload.single('fotoPerfil'), async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const filePath = `/uploads/${req.file.filename}`; // Ruta donde se almacenará la imagen
+
+        switch (req.user.role) {
+            case 'estudiante':
+                await Estudiante.findByIdAndUpdate(userId, { fotoPerfil: filePath });
+                break;
+            case 'preceptor':
+                await Preceptor.findByIdAndUpdate(userId, { fotoPerfil: filePath });
+                break;
+            case 'responsable':
+                await Responsable.findByIdAndUpdate(userId, { fotoPerfil: filePath });
+                break;
+            case 'directivo':
+                await Directivo.findByIdAndUpdate(userId, { fotoPerfil: filePath });
+                break;
+            default:
+                return res.status(400).send('Rol no reconocido');
+        }
+
+        res.redirect('/perfil');
+    } catch (error) {
+        console.error('Error al subir la foto de perfil:', error);
+        res.status(500).send('Error al subir la foto de perfil');
     }
 });
 

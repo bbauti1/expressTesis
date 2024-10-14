@@ -6,6 +6,7 @@ const ResponsableSchema = new mongoose.Schema({
     dni: { type: String, required: true, unique: true },
     telefono: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    fotoPerfil: { type: String, default: '/images/defaultProfile.png' },
 });
 
 module.exports = mongoose.model('Responsable', ResponsableSchema);

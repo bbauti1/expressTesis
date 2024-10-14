@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>Perfil Estudiante</title>
+</head>
+<body>
+    <h1>Perfil del Estudiante</h1>
+    <img src="<%= estudiante.fotoPerfil %>" alt="Foto de perfil" width="150" height="150">
+    <form action="/upload-profile-picture" method="POST" enctype="multipart/form-data">
+        <label for="fotoPerfil">Subir nueva foto de perfil:</label>
+        <input type="file" name="fotoPerfil" id="fotoPerfil">
+        <button type="submit">Actualizar foto</button>
+    </form>
+    <p>Nombre: <%= estudiante.nombre %></p>
+    <p>Apellido: <%= estudiante.apellido %></p>
+    <p>Nro Carnet: <%= estudiante.nroCarnet %></p>
+    <p>DNI: <%= estudiante.dni %></p>
+    <p>Email: <%= estudiante.email %></p>
+    <a href="/logout">Cerrar sesión</a>
+</body>
+</html>

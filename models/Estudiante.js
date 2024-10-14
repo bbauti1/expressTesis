@@ -7,7 +7,8 @@ const EstudianteSchema = new mongoose.Schema({
     dni: { type: String, required: true, unique: true },
     cursoPerteneciente: { type: mongoose.Schema.Types.ObjectId, ref: 'Curso', required: true },
     email: { type: String, required: true, unique: true },
-    estado: { type: String, enum: ['pendiente', 'aceptado', 'rechazado', 'dadobaja'], default: 'pendiente' } // Agregado estado
+    estado: { type: String, enum: ['pendiente', 'aceptado', 'rechazado', 'dadobaja'], default: 'pendiente' },
+    fotoPerfil: { type: String, default: '/images/defaultProfile.png' },
 });
 
 module.exports = mongoose.model('Estudiante', EstudianteSchema);
